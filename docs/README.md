@@ -1,67 +1,62 @@
 ---
+---
 layout: home
 permalink: index.html
 
-# Please update this with your repository name and project title
-repository-name: eYY-co2060-project-template
-title: Project Template
+# Updated with your specific project details
+repository-name: e23-co2060-FindIT
+title: FindIT - A Smart Lost and Found Management System
 ---
 
-[comment]: # "This is the standard layout for the project, but you can clean this and use your own template, and add more information required for your own project"
-
-<!-- Once you fill the index.json file inside /docs/data, please make sure the syntax is correct. (You can use this tool to identify syntax errors)
-
-Please include the "correct" email address of your supervisors. (You can find them from https://people.ce.pdn.ac.lk/ )
-
-Please include an appropriate cover page image ( cover_page.jpg ) and a thumbnail image ( thumbnail.jpg ) in the same folder as the index.json (i.e., /docs/data ). The cover page image must be cropped to 940×352 and the thumbnail image must be cropped to 640×360 . Use https://croppola.com/ for cropping and https://squoosh.app/ to reduce the file size.
-
-If your followed all the given instructions correctly, your repository will be automatically added to the department's project web site (Update daily)
-
-A HTML template integrated with the given GitHub repository templates, based on github.com/cepdnaclk/eYY-project-theme . If you like to remove this default theme and make your own web page, you can remove the file, docs/_config.yml and create the site using HTML. -->
-
-# Project Title
+# FindIT: A Smart Lost and Found Management System
 
 ---
 
 ## Team
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
-
-<!-- Image (photo/drawing of the final hardware) should be here -->
-
-<!-- This is a sample image, to show how to add images to your page. To learn more options, please refer [this](https://projects.ce.pdn.ac.lk/docs/faq/how-to-add-an-image/) -->
-
-<!-- ![Sample Image](./images/sample.png) -->
+- E/23/431, Dulmina Weerasinghe, [e23431@eng.pdn.ac.lk](mailto:e23431@eng.pdn.ac.lk)
+- E/23/149, Livindu Jayasinghe, [e23149@eng.pdn.ac.lk](mailto:e23149@eng.pdn.ac.lk)
+- E/23/382, Lihini Silva, [e23382@eng.pdn.ac.lk](mailto:e23382@eng.pdn.ac.lk)
+- E/23/274, Thenuk Piyathilake, [e23274@eng.pdn.ac.lk](mailto:e23274@eng.pdn.ac.lk)
 
 #### Table of Contents
 1. [Introduction](#introduction)
-2. [Solution Architecture](#solution-architecture )
-3. [Software Designs](#hardware-and-software-designs)
+2. [Solution Architecture](#solution-architecture)
+3. [Software Designs](#software-designs)
 4. [Testing](#testing)
 5. [Conclusion](#conclusion)
 6. [Links](#links)
 
 ## Introduction
 
-Description of the real world problem and solution, impact
+In busy shared environments like universities, losing personal items—such as keys, electronics, or wallets—is a common and stressful occurrence. Currently, recovery relies on fragmented methods like physical notice boards, verbal inquiries, or unorganized social media posts. This lack of a central system leads to low recovery rates and high frustration.
 
+**FindIT** is a digital solution designed to bridge this gap. It provides a centralized, privacy-first platform where users can report lost or found items through structured questionnaires. By using intelligent matching logic and a "gradual disclosure" communication model, FindIT ensures that items are returned to their rightful owners securely and efficiently, reducing the cognitive burden on both students and campus security.
 
 ## Solution Architecture
 
-High level diagram + description
+FindIT is built on a web-based architecture that connects three main entities: the **Loser**, the **Finder**, and the **System Administrator**. 
+
+* **Reporting Layer:** Captures detailed item descriptions.
+* **Matching Engine:** A decision-support layer that suggests potential matches based on item attributes.
+* **Secure Messaging:** A controlled channel for users to verify ownership without exposing sensitive contact details prematurely.
 
 ## Software Designs
 
-Detailed designs with many sub-sections
+The system is designed with a focus on data privacy and user empathy. Key components include:
+* **User Personas:** Detailed workflows for stressed "Losers" and helpful "Finders."
+* **Database Schema:** Optimized for attribute-based searching and matching.
+* **Security protocols:** Implementing visibility controls to prevent fraudulent claims.
 
 ## Testing
 
-Testing done on software : detailed + summarized results
+Testing will focus on:
+* **Matching Accuracy:** Ensuring the algorithm correctly identifies similar items while minimizing false positives.
+* **Privacy Guardrails:** Verifying that no personal data is exposed during the initial search phase.
+* **Usability:** Testing the interface responsiveness under simulated "stressful" user scenarios.
 
 ## Conclusion
 
-What was achieved, future developments, commercialization plans
+FindIT aims to transform the lost-and-found experience from a game of chance into a reliable, automated service. Beyond simple matching, the software creates a safer campus environment by providing data-driven insights into common loss areas and ensuring a high success rate for item recovery.
 
 ## Links
 
@@ -69,6 +64,3 @@ What was achieved, future developments, commercialization plans
 - [Project Page](https://cepdnaclk.github.io/{{ page.repository-name}}){:target="_blank"}
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
-
-[//]: # (Please refer this to learn more about Markdown syntax)
-[//]: # (https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
