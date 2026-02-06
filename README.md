@@ -1,9 +1,8 @@
-```
 {
   "title": "FindIT-A Smart Lost and Found Management System",
   "team": [
     {
-      "name": "Dulmina Weerasinghe ",
+      "name": "Dulmina Weerasinghe",
       "email": "e23431@eng.pdn.ac.lk",
       "eNumber": "E/23/431"
     },
@@ -31,4 +30,3 @@
   ],
   "tags": ["Lost and Found", "FindIT", "Software Systems"]
 }
-```
