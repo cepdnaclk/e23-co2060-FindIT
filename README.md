@@ -39,8 +39,8 @@ Centralized Dashboard: A single source of truth for campus security and administ
   ],
   "supervisors": [
     {
-      "name": "Dr.",
-      "email": "email@eng.pdn.ac.lk"
+      "name": "Mr. Thilina Gunarathne",
+      "email": "thilinag@eng.pdn.ac.lk"
     }
   ],
   "tags": ["Lost and Found", "FindIT", "Software Systems"]
