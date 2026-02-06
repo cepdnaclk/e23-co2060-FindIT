@@ -28,5 +28,9 @@
       "email": "email@eng.pdn.ac.lk"
     }
   ],
-  "tags": ["Lost and Found", "FindIT", "Software Systems"]
+  "tags": [
+    "Lost and Found",
+    "FindIT",
+    "Software Systems"
+  ]
 }
