@@ -1,4 +1,11 @@
+# Environments
 .env
+.venv/
+venv/
+
+# Python cache
 __pycache__/
 *.pyc
-.venv/
+
+# IDE Settings
+.vscode/
