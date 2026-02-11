@@ -1,3 +1,11 @@
-__pycache__/ 
-.env 
-venv/ 
+# Environments
+.env
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE Settings
+.vscode/
