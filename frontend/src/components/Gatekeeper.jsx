@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
-import emailjs from '@emailjs/browser';
 
 export default function Gatekeeper({ type, onBack }) {
   const [step, setStep] = useState('form');
@@ -9,92 +8,91 @@ export default function Gatekeeper({ type, onBack }) {
   const [loading, setLoading] = useState(false);
   
   // OTP Logic
-  const [generatedOtp, setGeneratedOtp] = useState(null);
   const [otpInput, setOtpInput] = useState(new Array(6).fill(""));
-  const inputRefs = useRef([]); // Refs to manage focus flow
+  const inputRefs = useRef([]); 
 
-  // YOUR EMAILJS KEYS (Updated)
-  const SERVICE_ID = "service_9wk0kxl";
-  const TEMPLATE_ID = "template_p4p0h5z";
-  const PUBLIC_KEY = "piMmjXAB4VJL04hXp";
+  // --- CHANGED: CONNECTED TO BACKEND ---
+  const API_URL = "http://127.0.0.1:8000";
 
-  // Initialize EmailJS once on mount (optional but good practice)
-  useEffect(() => {
-    emailjs.init(PUBLIC_KEY);
-  }, []);
-
-  const generateOTP = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  const handleProcess = (e) => {
+  const handleProcess = async (e) => {
     e.preventDefault();
-
-    // 1. Validation: University Email Only
-    if (!formData.email.endsWith("@eng.pdn.ac.lk")) {
-      setError("Only @eng.pdn.ac.lk emails are permitted.");
-      return;
-    }
-
-    // 2. Validation: Check if account exists (Sign In Only)
-    // Note: In a real app, you'd check a backend database here.
-    if (type === 'signin' && localStorage.getItem(formData.email)) {
-      setError("This email already has an account. Please Log In.");
-      return;
-    }
-
-    // 3. Send OTP
     setError("");
     setLoading(true);
 
-    const currentOTP = generateOTP();
-    setGeneratedOtp(currentOTP);
+    try {
+      // 1. Validation checks
+      if (!formData.email.endsWith("@eng.pdn.ac.lk")) {
+        throw new Error("Only @eng.pdn.ac.lk emails are permitted.");
+      }
 
-    const emailParams = {
-      to_email: formData.email,
-      otp: currentOTP,
-      time: new Date().toLocaleTimeString(),
-    };
-
-    emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams)
-      .then((response) => {
-        console.log('OTP SENT SUCCESS!', response.status, response.text);
-        setLoading(false);
-        setStep('otp'); 
-      }, (err) => {
-        console.log('OTP FAILED...', err);
-        setError("Failed to send code. Check console for details.");
-        setLoading(false);
+      // 2. Call Backend to Send OTP
+      const response = await fetch(`${API_URL}/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email })
       });
-  };
 
-  const handleOtpChange = (element, index) => {
-    if (isNaN(element.value)) return;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to send OTP");
+      }
 
-    const newOtp = [...otpInput];
-    newOtp[index] = element.value;
-    setOtpInput(newOtp);
-
-    // Auto-focus next input box if user typed a number
-    if (element.value && index < 5) {
-        inputRefs.current[index + 1].focus();
+      // 3. Success! Move to next step
+      setStep('otp');
+      
+    } catch (err) {
+      console.error("Backend Error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const verifyOTP = () => {
+  const verifyOTP = async () => {
     const enteredCode = otpInput.join("");
-    
-    if (enteredCode === generatedOtp) {
-      if (type === 'signin') {
-        // Save user data to simulate "creating account"
-        localStorage.setItem(formData.email, JSON.stringify(formData));
+    if (enteredCode.length !== 6) {
+      alert("Please enter the full 6-digit code.");
+      return;
+    }
+
+    try {
+      // 3. Call Backend to Verify OTP
+      const response = await fetch(`${API_URL}/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email: formData.email,
+          otp: enteredCode 
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Invalid OTP");
       }
-      alert(type === 'signin' ? "Account Verified & Created!" : "Welcome Back!");
+
+      // 4. Success!
+      const data = await response.json();
+      console.log("Login Token:", data.token); // In a real app, save this token
+      
+      alert("Login Successful!");
       onBack(); // Return to main app
-    } else {
-      alert("Invalid OTP. Please try again.");
-      setOtpInput(new Array(6).fill("")); // Clear inputs on failure
-      inputRefs.current[0].focus(); // Reset focus to first box
+
+    } catch (err) {
+      alert(err.message);
+      setOtpInput(new Array(6).fill("")); // Clear inputs
+      inputRefs.current[0].focus(); 
+    }
+  };
+
+  // --- UI HELPERS (No changes needed here) ---
+  const handleOtpChange = (element, index) => {
+    if (isNaN(element.value)) return;
+    const newOtp = [...otpInput];
+    newOtp[index] = element.value;
+    setOtpInput(newOtp);
+    if (element.value && index < 5) {
+        inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -110,12 +108,15 @@ export default function Gatekeeper({ type, onBack }) {
 
         {step === 'form' ? (
           <form onSubmit={handleProcess} className="space-y-4">
-            <input 
-              placeholder="Full Name" 
-              required
-              className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              onChange={e => setFormData({...formData, name: e.target.value})}
-            />
+            {/* Show Name field only for Sign In */}
+            {type === 'signin' && (
+              <input 
+                placeholder="Full Name" 
+                required
+                className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                onChange={e => setFormData({...formData, name: e.target.value})}
+              />
+            )}
             
             <input 
               type="email" 
@@ -131,7 +132,7 @@ export default function Gatekeeper({ type, onBack }) {
               disabled={loading}
               className={`w-full py-4 rounded-xl font-bold text-white transition shadow-lg ${loading ? 'bg-slate-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30 active:scale-95'}`}
             >
-              {loading ? 'Sending Code...' : (type === 'signin' ? 'Register Account' : 'Access Terminal')}
+              {loading ? 'Connecting to Server...' : (type === 'signin' ? 'Register Account' : 'Access Terminal')}
             </button>
           </form>
         ) : (
