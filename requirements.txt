@@ -1,6 +1,0 @@
-fastapi 
-uvicorn[standard] 
-sqlalchemy 
-mysql-connector-python 
-mysql-connector-python 
-mysql-connector-python 
