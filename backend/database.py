@@ -9,6 +9,16 @@ load_dotenv()
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Since running on Render, we need to handle SSL without a file
+connect_args = {}
+if "aivencloud.com" in SQLALCHEMY_DATABASE_URL:
+    connect_args = {
+        "ssl": {
+            "check_hostname": False,
+            "verify_mode": "cert_none"
+        }
+    }
+
 # The engine is the actual bridge to the database
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
