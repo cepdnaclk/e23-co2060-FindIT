@@ -1,29 +1,36 @@
-from pydantic import BaseModel, EmailStr, field_validator
-from datetime import datetime
+from pydantic import BaseModel, EmailStr
+from typing import List, Optional
 
-# Step 1: The user requests an OTP
+# --- Phase 1: Authentication Schemas ---
+# Added these to fix the ImportError in auth.py
 class EmailRequest(BaseModel):
     email: EmailStr
 
-    # University Email Validator
-    @field_validator('email')
-    @classmethod
-    def university_email_only(cls, v: str):
-        if not v.endswith('@eng.pdn.ac.lk'):
-            raise ValueError('Registration restricted to @eng.pdn.ac.lk domains only')
-        return v
-
-# Step 2: The user submits the OTP
 class OTPVerifyRequest(BaseModel):
     email: EmailStr
     otp: str
 
-# This is what the API sends back to the user 
-class UserOut(BaseModel):
+# --- Phase 2: Item Schemas (Infrastructure Builder Tasks) ---
+# What the user sends to us when reporting an item
+class ItemCreate(BaseModel):
+    description: str
+    category: str
+    item_type: str # Must be "Lost" or "Found"
+
+# What the fuzzy engine (Member 2) sends back to the user
+class MatchResponse(BaseModel):
     id: int
-    email: EmailStr
-    is_verified: bool
-    created_at: datetime
+    description: str
+    reported_by: str
+    confidence: int
+
+# The complete doorway for data to enter and leave the API
+class ItemResponse(BaseModel):
+    id: int
+    description: str
+    category: str
+    item_type: str
+    matches: List[MatchResponse] = []
 
     class Config:
         from_attributes = True
