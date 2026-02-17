@@ -4,12 +4,16 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import ssl
 import os
+from dotenv import load_dotenv
+
+# Load variables from .env file (only for local testing)
+load_dotenv()
 
 # CONFIGURATION (Ideally, move these to a .env file later)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
 SENDER_EMAIL = "finditsystem4@gmail.com" # <--- PUT YOUR GMAIL HERE
-SENDER_PASSWORD = "bjig ncnf uank qudr" # <--- PUT YOUR 16-CHAR APP PASSWORD HERE
+SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD") # <--- PUT YOUR 16-CHAR APP PASSWORD HERE
 
 def send_email(recipient_email: str, otp_code: str):
     try:
