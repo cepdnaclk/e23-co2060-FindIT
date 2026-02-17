@@ -12,7 +12,7 @@ export default function Gatekeeper({ type, onBack }) {
   const inputRefs = useRef([]); 
 
   // --- CHANGED: CONNECTED TO BACKEND ---
-  const API_URL = "http://127.0.0.1:8000";
+  const API_URL = "https://findit-9uqc.onrender.com";
 
   const handleProcess = async (e) => {
     e.preventDefault();
