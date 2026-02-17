@@ -32,17 +32,17 @@ def send_email(recipient_email: str, otp_code: str):
         msg.attach(MIMEText(body, 'html'))
 
         # 3. Connect to Gmail Server
-        server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
-        server.starttls() # Secure the connection
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
         
         # 4. Send and Close
         server.send_message(msg)
         server.quit()
         
-        print(f"✅ Email sent successfully to {recipient_email}")
+        print(f"[OK] Email sent successfully to {recipient_email}")
         return True
 
     except Exception as e:
-        print(f"❌ Failed to send email: {e}")
+        print(f"[Fail] Unexpected error sending email to {recipient_email}: {e}")
         return False
