@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 
 # CONFIGURATION (Ideally, move these to a .env file later)
 SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+SMTP_PORT = 465
 SENDER_EMAIL = "finditsystem4@gmail.com" # <--- PUT YOUR GMAIL HERE
 SENDER_PASSWORD = "makp qxlm kzcs ebpf" # <--- PUT YOUR 16-CHAR APP PASSWORD HERE
 
