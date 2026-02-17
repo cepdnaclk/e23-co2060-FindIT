@@ -6,6 +6,7 @@ from auth import router as auth_router
 
 
 # Creates the MySQL tables automatically on startup
+models.Base.metadata.drop_all(bind=engine)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -14,7 +15,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*",
-                   "https://findit-foe.onrender.com"], # The URL of your React App
+                   "https://findit-foe.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"], # Allow all methods (POST, GET, etc.)
     allow_headers=["*"], # Allow all headers
