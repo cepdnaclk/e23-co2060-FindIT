@@ -32,7 +32,7 @@ def send_email(recipient_email: str, otp_code: str):
         msg.attach(MIMEText(body, 'html'))
 
         # 3. Connect to Gmail Server
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
         server.starttls() # Secure the connection
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         
