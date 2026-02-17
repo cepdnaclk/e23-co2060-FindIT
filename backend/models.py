@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, Enum, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
 import enum
 from database import Base
+from datetime import datetime
 
 class ItemType(str, enum.Enum):
     LOST = "Lost"
@@ -13,7 +14,10 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
-    # ... other user fields ...
+    full_name = Column(String(255), nullable=True) 
+    is_verified = Column(Boolean, default=False)
+    otp_code = Column(String(6), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationship to items
     items = relationship("Item", back_populates="reporter")

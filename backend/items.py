@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database, models, schemas
-from matching import find_matches # Importing Member 2's logic
+from matching import find_matches 
 
 router = APIRouter(prefix="/items", tags=["Items"])
 

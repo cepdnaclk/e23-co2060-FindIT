@@ -2,12 +2,14 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import ssl
+import os
 
 # CONFIGURATION (Ideally, move these to a .env file later)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
 SENDER_EMAIL = "finditsystem4@gmail.com" # <--- PUT YOUR GMAIL HERE
-SENDER_PASSWORD = "makp qxlm kzcs ebpf" # <--- PUT YOUR 16-CHAR APP PASSWORD HERE
+SENDER_PASSWORD = "bjig ncnf uank qudr" # <--- PUT YOUR 16-CHAR APP PASSWORD HERE
 
 def send_email(recipient_email: str, otp_code: str):
     try:
@@ -32,17 +34,17 @@ def send_email(recipient_email: str, otp_code: str):
         msg.attach(MIMEText(body, 'html'))
 
         # 3. Connect to Gmail Server
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+        context = ssl.create_default_context()
+
+        # 3. Connect -> Login -> Send -> Quit (All in one block)
+        print(f"🔄 Connecting to Gmail to send to {recipient_email}...")
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=context) as server:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(msg)
         
-        # 4. Send and Close
-        server.send_message(msg)
-        server.quit()
-        
-        print(f"[OK] Email sent successfully to {recipient_email}")
+        print(f"✅ Email sent successfully to {recipient_email}")
         return True
 
     except Exception as e:
-        print(f"[Fail] Unexpected error sending email to {recipient_email}: {e}")
+        print(f"❌ Failed to send email: {e}")
         return False
