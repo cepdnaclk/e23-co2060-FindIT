@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 
-export default function Gatekeeper({ type, onBack }) {
+export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuccess prop
   const [step, setStep] = useState('form');
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [error, setError] = useState("");
@@ -11,7 +11,7 @@ export default function Gatekeeper({ type, onBack }) {
   const [otpInput, setOtpInput] = useState(new Array(6).fill(""));
   const inputRefs = useRef([]); 
 
-  // --- CHANGED: CONNECTED TO BACKEND ---
+  // Backend URL
   const API_URL = "https://findit-backend-uc54.onrender.com";
 
   const handleProcess = async (e) => {
@@ -20,12 +20,10 @@ export default function Gatekeeper({ type, onBack }) {
     setLoading(true);
 
     try {
-      // 1. Validation checks
       if (!formData.email.endsWith("@eng.pdn.ac.lk")) {
         throw new Error("Only @eng.pdn.ac.lk emails are permitted.");
       }
 
-      // 2. Call Backend to Send OTP
       const response = await fetch(`${API_URL}/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -37,7 +35,6 @@ export default function Gatekeeper({ type, onBack }) {
         throw new Error(errorData.detail || "Failed to send OTP");
       }
 
-      // 3. Success! Move to next step
       setStep('otp');
       
     } catch (err) {
@@ -56,7 +53,6 @@ export default function Gatekeeper({ type, onBack }) {
     }
 
     try {
-      // 3. Call Backend to Verify OTP
       const response = await fetch(`${API_URL}/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,21 +67,21 @@ export default function Gatekeeper({ type, onBack }) {
         throw new Error(errorData.detail || "Invalid OTP");
       }
 
-      // 4. Success!
       const data = await response.json();
-      console.log("Login Token:", data.token); // In a real app, save this token
+      console.log("Login Token:", data.token); 
       
-      alert("Login Successful!");
-      onBack(); // Return to main app
+      // --- SUCCESS TRIGGER ---
+      // Instead of just calling onBack (which goes to hero), 
+      // we call onSuccess which triggers the Selection Screen in App.jsx
+      onSuccess(); 
 
     } catch (err) {
       alert(err.message);
-      setOtpInput(new Array(6).fill("")); // Clear inputs
-      inputRefs.current[0].focus(); 
+      setOtpInput(new Array(6).fill("")); 
+      inputRefs.current[0]?.focus(); 
     }
   };
 
-  // --- UI HELPERS (No changes needed here) ---
   const handleOtpChange = (element, index) => {
     if (isNaN(element.value)) return;
     const newOtp = [...otpInput];
@@ -108,7 +104,6 @@ export default function Gatekeeper({ type, onBack }) {
 
         {step === 'form' ? (
           <form onSubmit={handleProcess} className="space-y-4">
-            {/* Show Name field only for Sign In */}
             {type === 'signin' && (
               <input 
                 placeholder="Full Name" 
@@ -167,4 +162,5 @@ export default function Gatekeeper({ type, onBack }) {
 Gatekeeper.propTypes = {
   type: PropTypes.string.isRequired,
   onBack: PropTypes.func.isRequired,
+  onSuccess: PropTypes.func.isRequired, // Added requirement
 };
