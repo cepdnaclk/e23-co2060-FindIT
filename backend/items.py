@@ -9,10 +9,13 @@ router = APIRouter(prefix="/items", tags=["Items"])
 def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)):
     # 1. Create the database record
     new_item = models.Item(
+        title=item.title,           # Added to match Frontend
         description=item.description,
         category=item.category,
+        location=item.location,     # Added to match Frontend
         item_type=item.item_type,
-        owner_email="student@eng.pdn.ac.lk" # Temporary placeholder until Auth integration
+        image_url=item.image_url,   # The Firebase link we planned
+        owner_email="student@eng.pdn.ac.lk"
     )
     
     try:
