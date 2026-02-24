@@ -9,17 +9,84 @@ function App() {
   const [view, setView] = useState('landing'); 
   const [reportType, setReportType] = useState(''); 
   const [showMatches, setShowMatches] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null); // New state for image
+  const [selectedImage, setSelectedImage] = useState(null);
 
-  const handleAuthSuccess = () => {
+  const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
+
+  const [formData, setFormData] = useState({
+    category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: ''
+  });
+
+  const handleAuthSuccess = (email) => {
+    if(email) {
+      setUserEmail(email);
+      localStorage.setItem('userEmail', email);
+    }
     setView('selection');
   };
 
-  // Handle Image Selection and Preview
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedImage(URL.createObjectURL(file));
+    }
+  };
+
+  const handleLogout = () => {
+    setView('landing'); 
+    setShowMatches(false); 
+    setSelectedImage(null);
+    setUserEmail('');
+    localStorage.removeItem('userEmail');
+    setFormData({category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: ''});
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Failsafe: Don't let them submit if somehow the email is missing
+    if (!userEmail) {
+        alert("Session expired. Please log in again.");
+        setView('landing');
+        return;
+    }
+
+    const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: formData.location,
+        date: formData.date,
+        time: formData.time,
+        item_type: reportType.toUpperCase(), 
+        owner_email: userEmail,
+        image_url: null 
+    };
+
+    try {
+        // Using the Vite environment variable so it works on Render!
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/items/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Success! Saved to DB:", data);
+            setShowMatches(true); 
+            setView('dashboard');
+        } else {
+            const err = await response.json();
+            alert("Failed to save: " + JSON.stringify(err));
+        }
+    } catch (error) {
+        console.error("Network Error:", error);
+        alert("Failed to connect to backend server.");
     }
   };
 
@@ -44,7 +111,7 @@ function App() {
               <button onClick={() => setView('login')} className="px-5 py-2 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 transition shadow-lg">Log In</button>
             </>
           ) : (
-            <button onClick={() => {setView('landing'); setShowMatches(false); setSelectedImage(null);}} className="flex items-center gap-2 text-slate-400 hover:text-red-400 font-bold transition">
+            <button onClick={handleLogout} className="flex items-center gap-2 text-slate-400 hover:text-red-400 font-bold transition">
               <LogOut size={18}/> Logout
             </button>
           )}
@@ -80,9 +147,9 @@ function App() {
           <button onClick={() => setView('selection')} className="flex items-center gap-2 text-slate-400 mb-6 hover:text-white transition font-bold"><ArrowLeft size={20}/> Back</button>
           <h2 className="text-3xl font-black mb-8 text-indigo-400 uppercase italic">Report {reportType} Item</h2>
           
-          <form onSubmit={(e) => { e.preventDefault(); setShowMatches(true); setView('dashboard'); }} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* IMAGE UPLOAD SECTION (Mandatory for Found) */}
+            {/* IMAGE UPLOAD SECTION */}
             <div className="space-y-2">
                 <label className="block text-xs font-black text-slate-500 uppercase">Item Image {reportType === 'found' && '*'}</label>
                 <div className="relative group flex items-center justify-center w-full h-48 bg-slate-900 border-2 border-dashed border-slate-700 rounded-2xl overflow-hidden hover:border-indigo-500 transition-all">
@@ -104,7 +171,7 @@ function App() {
                             <input 
                                 type="file" 
                                 accept="image/*" 
-                                capture="environment" // TRIGGERS CAMERA ON MOBILE
+                                capture="environment" 
                                 className="hidden" 
                                 onChange={handleImageChange}
                                 required={reportType === 'found'} 
@@ -114,25 +181,86 @@ function App() {
                 </div>
             </div>
 
-            <select required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 outline-none focus:border-indigo-500">
+            <select 
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              required 
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 outline-none focus:border-indigo-500"
+            >
               <option value="">Select Category *</option>
               {CATEGORIES.map(cat => <option key={cat} value={cat.toLowerCase()}>{cat}</option>)}
             </select>
 
-            <input type="text" placeholder="Title (e.g. Silver Laptop)" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" required />
+            <input 
+              type="text" 
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              placeholder="Title (e.g. Silver Laptop)" 
+              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" 
+              required 
+            />
             
             <div className="grid grid-cols-2 gap-4">
-              <input type="date" className="bg-slate-900 border border-slate-700 p-4 rounded-xl" required />
-              <input type="time" step="1800" className="bg-slate-900 border border-slate-700 p-4 rounded-xl" required />
+              <input 
+                type="date" 
+                name="date"
+                value={formData.date}
+                onChange={handleInputChange}
+                className="bg-slate-900 border border-slate-700 p-4 rounded-xl" 
+                required 
+              />
+              <input 
+                type="time" 
+                name="time"
+                value={formData.time}
+                onChange={handleInputChange}
+                step="1800" 
+                className="bg-slate-900 border border-slate-700 p-4 rounded-xl" 
+                required 
+              />
             </div>
 
-            <input type="text" placeholder="Location (e.g. Canteen)" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl" required />
-            <textarea placeholder="Unique details (colors, stickers, brand)..." className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl h-32" required />
+            <input 
+              type="text" 
+              name="location"
+              value={formData.location}
+              onChange={handleInputChange}
+              placeholder="Location (e.g. Canteen)" 
+              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl" 
+              required 
+            />
+            
+            <textarea 
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Unique details (colors, stickers, brand)..." 
+              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl h-32" 
+              required 
+            />
             
             <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 space-y-4">
               <p className="text-xs font-black text-indigo-500 uppercase flex items-center gap-2"><Lock size={14}/> Security Verification</p>
-              <input type="text" placeholder="Secret Question" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl" required />
-              <input type="text" placeholder="Secret Answer" className="w-full border border-slate-700 p-3 bg-slate-900 rounded-xl" required />
+              <input 
+                type="text" 
+                name="secretQ"
+                value={formData.secretQ}
+                onChange={handleInputChange}
+                placeholder="Secret Question" 
+                className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl" 
+                required 
+              />
+              <input 
+                type="text" 
+                name="secretA"
+                value={formData.secretA}
+                onChange={handleInputChange}
+                placeholder="Secret Answer" 
+                className="w-full border border-slate-700 p-3 bg-slate-900 rounded-xl" 
+                required 
+              />
             </div>
             
             <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-500 transition shadow-lg">
