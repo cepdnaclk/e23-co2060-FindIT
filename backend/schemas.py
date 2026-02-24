@@ -16,6 +16,8 @@ class ItemCreate(BaseModel):
     category: str
     location: str
     item_type: str
+    lost_date: str 
+    lost_time: str
     image_url: Optional[str] = None
 
 # What the fuzzy engine (Member 2) sends back

@@ -14,6 +14,8 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
         category=item.category,
         location=item.location,     # Added to match Frontend
         item_type=item.item_type,
+        lost_date=item.lost_date, 
+        lost_time=item.lost_time, 
         image_url=item.image_url,   # The Firebase link we planned
         owner_email="student@eng.pdn.ac.lk"
     )
@@ -38,8 +40,12 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
     # 3. Return the saved item and the potential matches
     return {
         "id": new_item.id,
+        "title": new_item.title,        # Added
         "description": new_item.description,
         "category": new_item.category,
+        "location": new_item.location,  # Added
         "item_type": new_item.item_type,
+        "lost_date": new_item.lost_date,# Added
+        "lost_time": new_item.lost_time,# Added
         "matches": match_results
     }

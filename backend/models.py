@@ -26,8 +26,8 @@ class Item(Base):
     category = Column(String(100), nullable=False)
     location = Column(String(255), nullable=False)
     item_type = Column(String(50), nullable=False)
+    lost_date = Column(String(50), nullable=True) # e.g., "2026-02-24"
+    lost_time = Column(String(50), nullable=True) # e.g., "14:30"
     image_url = Column(String(500), nullable=True) 
-    
     owner_email = Column(String(255), ForeignKey("users.email"))
-    
     reporter = relationship("User", back_populates="items")
