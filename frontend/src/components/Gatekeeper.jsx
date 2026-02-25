@@ -6,10 +6,10 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   // OTP Logic
   const [otpInput, setOtpInput] = useState(new Array(6).fill(""));
-  const inputRefs = useRef([]); 
+  const inputRefs = useRef([]);
 
   // Backend URL
   const API_URL = "https://findit-backend-uc54.onrender.com";
@@ -36,7 +36,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
       }
 
       setStep('otp');
-      
+
     } catch (err) {
       console.error("Backend Error:", err);
       setError(err.message);
@@ -56,9 +56,9 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
       const response = await fetch(`${API_URL}/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: formData.email,
-          otp: enteredCode 
+          otp: enteredCode
         })
       });
 
@@ -68,17 +68,17 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
       }
 
       const data = await response.json();
-      console.log("Login Token:", data.token); 
-      
+      console.log("Login Token:", data.token);
+
       // --- SUCCESS TRIGGER ---
       // Instead of just calling onBack (which goes to hero), 
       // we call onSuccess which triggers the Selection Screen in App.jsx
-      onSuccess(); 
+      onSuccess(formData.email);
 
     } catch (err) {
       alert(err.message);
-      setOtpInput(new Array(6).fill("")); 
-      inputRefs.current[0]?.focus(); 
+      setOtpInput(new Array(6).fill(""));
+      inputRefs.current[0]?.focus();
     }
   };
 
@@ -88,7 +88,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
     newOtp[index] = element.value;
     setOtpInput(newOtp);
     if (element.value && index < 5) {
-        inputRefs.current[index + 1]?.focus();
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -96,7 +96,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
       <div className="w-full max-w-[400px] bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
         <button onClick={onBack} className="text-slate-500 hover:text-white mb-6 text-sm">← Back</button>
-        
+
         <h2 className="text-2xl font-bold text-white mb-2">
           {step === 'form' ? (type === 'signin' ? 'Create Account' : 'User Login') : 'Verify Identity'}
         </h2>
@@ -105,25 +105,25 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
         {step === 'form' ? (
           <form onSubmit={handleProcess} className="space-y-4">
             {type === 'signin' && (
-              <input 
-                placeholder="Full Name" 
+              <input
+                placeholder="Full Name"
                 required
                 className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                onChange={e => setFormData({...formData, name: e.target.value})}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
               />
             )}
-            
-            <input 
-              type="email" 
-              placeholder="eXXXXX@eng.pdn.ac.lk" 
+
+            <input
+              type="email"
+              placeholder="eXXXXX@eng.pdn.ac.lk"
               required
               className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              onChange={e => setFormData({...formData, email: e.target.value})}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
             />
-            
+
             {error && <p className="text-red-400 text-xs font-bold animate-pulse">{error}</p>}
-            
-            <button 
+
+            <button
               disabled={loading}
               className={`w-full py-4 rounded-xl font-bold text-white transition shadow-lg ${loading ? 'bg-slate-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30 active:scale-95'}`}
             >
@@ -132,8 +132,8 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
           </form>
         ) : (
           <div className="space-y-6 text-center">
-            <p className="text-slate-400 text-sm">A 6-digit code was sent to <br/><span className="text-indigo-400 font-bold">{formData.email}</span></p>
-            
+            <p className="text-slate-400 text-sm">A 6-digit code was sent to <br /><span className="text-indigo-400 font-bold">{formData.email}</span></p>
+
             <div className="flex justify-between gap-2">
               {otpInput.map((data, index) => (
                 <input
@@ -148,7 +148,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuc
                 />
               ))}
             </div>
-            
+
             <button onClick={verifyOTP} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-white transition shadow-lg shadow-emerald-500/20 active:scale-95">
               Verify OTP
             </button>
