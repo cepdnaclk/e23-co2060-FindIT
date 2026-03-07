@@ -33,8 +33,8 @@ def find_matches(new_item_text: str, category: str, item_type: str, db_session):
                 "title": db_item.title or "Untitled", # Ensure no None values
                 "description": db_item.description or "",
                 "location": db_item.location or "Unknown",
-                "date": db_item.lost_date or "N/A",
-                "time": db_item.lost_time or "N/A",
+                "date": db_item.date or "N/A",
+                "time": db_item.time or "N/A",
                 "secret_question": db_item.secret_question or "No question set",
                 "reported_by": user_name, # This is now guaranteed to be a string
                 "confidence": score
