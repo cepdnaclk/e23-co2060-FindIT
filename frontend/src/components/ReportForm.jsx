@@ -44,12 +44,41 @@ export default function ReportForm({
 
         <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder="Unique details (colors, stickers, brand)..." className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl h-32" required />
 
+        {/*Phone input*/}
+        <input 
+          type="tel" 
+          name="phone"
+          value={formData.phone}
+          onChange={handleInputChange}
+          placeholder="Your Phone Number (e.g. 0771234567)" 
+          className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" 
+          required 
+        />
+
+        {/*Security Verification box*/}
         <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 space-y-4">
           <p className="text-xs font-black text-indigo-500 uppercase flex items-center gap-2"><Lock size={14} /> Security Verification</p>
-          <input type="text" name="secretQ" value={formData.secretQ} onChange={handleInputChange} placeholder="Secret Question" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl" required />
-          <input type="text" name="secretA" value={formData.secretA} onChange={handleInputChange} placeholder="Secret Answer" className="w-full border border-slate-700 p-3 bg-slate-900 rounded-xl" required />
+          <input 
+            type="text" 
+            name="secretQ" 
+            value={formData.secretQ} 
+            onChange={handleInputChange} 
+            placeholder="Secret Question (e.g. What is the wallpaper?)" 
+            className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl" 
+            required 
+          />
+          <input 
+            type="text" 
+            name="secretA" 
+            value={formData.secretA} 
+            onChange={handleInputChange} 
+            placeholder="Secret Answer" 
+            className="w-full border border-slate-700 p-3 bg-slate-900 rounded-xl" 
+            required 
+          />
         </div>
-
+        
+        {/* --- SUBMIT BUTTON --- */}
         <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-500 transition shadow-lg">
           {reportType === 'found' ? 'SUBMIT FOUND ITEM' : 'SEARCH FOR MATCHES'}
         </button>

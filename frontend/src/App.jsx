@@ -20,7 +20,7 @@ function App() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [formData, setFormData] = useState({
-    category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: ''
+    category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: ''
   });
 
   const handleAuthSuccess = (email) => {
@@ -44,7 +44,7 @@ function App() {
     setSelectedImage(null);
     setUserEmail('');
     localStorage.removeItem('userEmail');
-    setFormData({ category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '' });
+    setFormData({ category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: ''});
   };
 
   const handleInputChange = (e) => {
@@ -67,7 +67,10 @@ function App() {
       time: formData.time,
       item_type: reportType.toUpperCase(),
       owner_email: userEmail,
-      image_url: null
+      image_url: null,
+      secret_question: formData.secretQ,
+      secret_answer: formData.secretA,
+      contact_number: formData.phone
     };
 
     try {
