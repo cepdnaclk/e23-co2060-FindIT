@@ -14,8 +14,8 @@ app = FastAPI()
 # Allows React Frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*",
-                   "https://findit-foe.onrender.com"],
+    allow_origins=["http://localhost:5173",
+                   "https://findit-frontend-e350.onrender.com/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
