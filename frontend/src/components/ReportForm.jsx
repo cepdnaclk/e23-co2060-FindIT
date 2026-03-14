@@ -6,7 +6,7 @@ export default function ReportForm({
 }) {
   return (
     <div className="max-w-2xl mx-auto bg-slate-800 p-8 rounded-3xl shadow-2xl my-10 border border-slate-700 animate-in slide-in-from-bottom-4">
-      <button onClick={() => setView('selection')} className="flex items-center gap-2 text-slate-400 mb-6 hover:text-white transition font-bold"><ArrowLeft size={20} /> Back</button>
+      <button onClick={() => setView('dashboard')} className="flex items-center gap-2 text-slate-400 mb-6 hover:text-white transition font-bold"><ArrowLeft size={20} /> Back</button>
       <h2 className="text-3xl font-black mb-8 text-indigo-400 uppercase italic">Report {reportType} Item</h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -16,39 +16,37 @@ export default function ReportForm({
             {selectedImage ? (
               <>
                 <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
-                <button type="button" onClick={() => setSelectedImage(null)} className="absolute top-2 right-2 bg-rose-600 p-1 rounded-full shadow-lg"><X size={16} /></button>
+                <button type="button" onClick={() => setSelectedImage(null)} className="absolute top-2 right-2 bg-red-500 p-2 rounded-full text-white hover:scale-110 transition">
+                  <X size={16} />
+                </button>
               </>
             ) : (
-              <label className="cursor-pointer flex flex-col items-center gap-2">
-                <Camera size={40} className="text-slate-600 group-hover:text-indigo-500 transition-colors" />
-                <span className="text-sm text-slate-500">Tap to capture / upload</span>
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} required={reportType === 'found'} />
+              <label className="flex flex-col items-center justify-center cursor-pointer text-slate-400 hover:text-indigo-400 w-full h-full">
+                <Camera size={40} className="mb-2" />
+                <span className="font-bold">Upload Image</span>
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
               </label>
             )}
           </div>
         </div>
 
-        <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 outline-none focus:border-indigo-500">
-          <option value="">Select Category *</option>
-          {CATEGORIES.map(cat => <option key={cat} value={cat.toLowerCase()}>{cat}</option>)}
-        </select>
-
-        <input type="text" name="title" value={formData.title} onChange={handleInputChange} placeholder="Title (e.g. Silver Laptop)" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" required />
-
         <div className="grid grid-cols-2 gap-4">
-          <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="bg-slate-900 border border-slate-700 p-4 rounded-xl" required />
-          <input type="time" name="time" value={formData.time} onChange={handleInputChange} step="1800" className="bg-slate-900 border border-slate-700 p-4 rounded-xl" required />
+          <input type="text" name="title" value={formData.title} onChange={handleInputChange} placeholder="Item Name (e.g. Blue Backpack)" className="col-span-2 bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none focus:border-indigo-500" required />
+          <select name="category" value={formData.category} onChange={handleInputChange} className="col-span-2 bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" required>
+            <option value="" disabled>Select Category</option>
+            {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
+          <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" required />
+          <input type="time" name="time" value={formData.time} onChange={handleInputChange} className="bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" required />
+          <input type="text" name="location" value={formData.location} onChange={handleInputChange} placeholder="Location (e.g. Library 2nd Floor)" className="col-span-2 bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" required />
         </div>
 
-        <input type="text" name="location" value={formData.location} onChange={handleInputChange} placeholder="Location (e.g. Canteen)" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl" required />
-
-        <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder="Unique details (colors, stickers, brand)..." className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl h-32" required />
-
-        {/*Phone input*/}
+        <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder="Detailed Description (Color, brand, identifying marks...)" className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none min-h-[120px]" required></textarea>
+        
         <input 
           type="tel" 
-          name="phone"
-          value={formData.phone}
+          name="phone" 
+          value={formData.phone} 
           onChange={handleInputChange}
           placeholder="Your Phone Number (e.g. 0771234567)" 
           className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl outline-none" 
@@ -79,8 +77,8 @@ export default function ReportForm({
         </div>
         
         {/* --- SUBMIT BUTTON --- */}
-        <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-500 transition shadow-lg">
-          {reportType === 'found' ? 'SUBMIT FOUND ITEM' : 'SEARCH FOR MATCHES'}
+        <button type="submit" className="w-full py-4 rounded-xl font-black text-lg shadow-xl hover:scale-[1.02] transition-all bg-indigo-600 hover:bg-indigo-500 text-white">
+          Submit Report
         </button>
       </form>
     </div>

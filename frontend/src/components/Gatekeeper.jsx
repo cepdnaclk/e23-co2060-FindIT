@@ -1,166 +1,145 @@
-import { useState, useRef } from 'react';
-import PropTypes from 'prop-types';
+import { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 
-export default function Gatekeeper({ type, onBack, onSuccess }) { // Added onSuccess prop
-  const [step, setStep] = useState('form');
+export default function Gatekeeper({ type, onBack, onSuccess }) { 
   const [formData, setFormData] = useState({ name: '', email: '' });
+  const [otp, setOtp] = useState(''); // Stores the OTP the user types in
+  const [step, setStep] = useState('email'); // Toggles between 'email' and 'otp' screens
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // OTP Logic
-  const [otpInput, setOtpInput] = useState(new Array(6).fill(""));
-  const inputRefs = useRef([]);
-
-  // Backend URL
-  const API_URL = "https://findit-backend-uc54.onrender.com";
-
-  const handleProcess = async (e) => {
+  // 1. Send the OTP to the user's email
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      // Enforce university email domain
       if (!formData.email.endsWith("@eng.pdn.ac.lk")) {
         throw new Error("Only @eng.pdn.ac.lk emails are permitted.");
       }
 
-      const response = await fetch(`${API_URL}/send-otp`, {
+      // Call your FastAPI /send-otp endpoint
+      const response = await fetch("http://localhost:8000/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email })
+        body: JSON.stringify({ email: formData.email, name: formData.name })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to send OTP");
+        const errData = await response.json();
+        throw new Error(errData.detail || "Failed to send OTP. Is the backend running?");
       }
 
+      // Success! Move to the OTP verification screen
       setStep('otp');
-
     } catch (err) {
-      console.error("Backend Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const verifyOTP = async () => {
-    const enteredCode = otpInput.join("");
-    if (enteredCode.length !== 6) {
-      alert("Please enter the full 6-digit code.");
-      return;
-    }
+  // 2. Verify the OTP the user entered
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/verify-otp`, {
+      // Call your FastAPI /verify-otp endpoint
+      const response = await fetch("http://localhost:8000/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          otp: enteredCode
-        })
+        // NOTE: Make sure the key matches your schemas.py. It might be "otp" or "otp_code"
+        body: JSON.stringify({ email: formData.email, otp: otp }) 
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Invalid OTP");
+        const errData = await response.json();
+        throw new Error(errData.detail || "Invalid or expired OTP.");
       }
 
-      const data = await response.json();
-      console.log("Login Token:", data.token);
-
-      // --- SUCCESS TRIGGER ---
-      // Instead of just calling onBack (which goes to hero), 
-      // we call onSuccess which triggers the Selection Screen in App.jsx
+      // OTP is correct! Grant access to the app
       onSuccess(formData.email);
-
     } catch (err) {
-      alert(err.message);
-      setOtpInput(new Array(6).fill(""));
-      inputRefs.current[0]?.focus();
-    }
-  };
-
-  const handleOtpChange = (element, index) => {
-    if (isNaN(element.value)) return;
-    const newOtp = [...otpInput];
-    newOtp[index] = element.value;
-    setOtpInput(newOtp);
-    if (element.value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
-      <div className="w-full max-w-[400px] bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
-        <button onClick={onBack} className="text-slate-500 hover:text-white mb-6 text-sm">← Back</button>
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6 animate-in fade-in zoom-in duration-500">
+      <div className="max-w-md w-full bg-slate-800 p-10 rounded-3xl shadow-2xl border border-slate-700 relative">
+        
+        {/* Back Button */}
+        <button 
+          onClick={step === 'email' ? onBack : () => setStep('email')} 
+          className="absolute top-6 left-6 text-slate-400 hover:text-white transition flex items-center gap-1 font-bold"
+        >
+          <ArrowLeft size={18} /> Back
+        </button>
 
-        <h2 className="text-2xl font-bold text-white mb-2">
-          {step === 'form' ? (type === 'signin' ? 'Create Account' : 'User Login') : 'Verify Identity'}
+        {/* Dynamic Headers based on the current step */}
+        <h2 className="text-3xl font-black text-white text-center mb-2 mt-4">
+          {step === 'email' ? (type === 'signin' ? 'Create Account' : 'Welcome Back') : 'Enter OTP'}
         </h2>
-        <p className="text-slate-400 text-sm mb-8 font-medium">Gatekeeper Security Layer</p>
+        <p className="text-slate-400 text-center mb-8">
+          {step === 'email' ? 'Enter your university email to continue' : `We sent a 6-digit code to ${formData.email}`}
+        </p>
 
-        {step === 'form' ? (
-          <form onSubmit={handleProcess} className="space-y-4">
+        {error && <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-sm font-bold text-center">{error}</div>}
+
+        {/* Step 1: Email Form */}
+        {step === 'email' ? (
+          <form onSubmit={handleSendOtp} className="space-y-6">
             {type === 'signin' && (
-              <input
-                placeholder="Full Name"
-                required
-                className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
+              <input 
+                type="text" 
+                placeholder="Full Name" 
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+                className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" 
+                required 
               />
             )}
-
-            <input
-              type="email"
-              placeholder="eXXXXX@eng.pdn.ac.lk"
-              required
-              className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
+            
+            <input 
+              type="email" 
+              placeholder="University Email (@eng.pdn.ac.lk)" 
+              value={formData.email}
+              onChange={e => setFormData({...formData, email: e.target.value})}
+              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" 
+              required 
             />
 
-            {error && <p className="text-red-400 text-xs font-bold animate-pulse">{error}</p>}
-
-            <button
-              disabled={loading}
-              className={`w-full py-4 rounded-xl font-bold text-white transition shadow-lg ${loading ? 'bg-slate-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/30 active:scale-95'}`}
-            >
-              {loading ? 'Connecting to Server...' : (type === 'signin' ? 'Register Account' : 'Access Terminal')}
+            <button disabled={loading} type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl transition shadow-lg">
+              {loading ? 'Sending OTP...' : 'Send OTP'}
             </button>
           </form>
+
         ) : (
-          <div className="space-y-6 text-center">
-            <p className="text-slate-400 text-sm">A 6-digit code was sent to <br /><span className="text-indigo-400 font-bold">{formData.email}</span></p>
+          
+        /* Step 2: OTP Form */
+          <form onSubmit={handleVerifyOtp} className="space-y-6 animate-in slide-in-from-right-4">
+            <input 
+              type="text" 
+              placeholder="6-Digit Code" 
+              value={otp}
+              onChange={e => setOtp(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition text-center text-2xl tracking-widest font-mono" 
+              maxLength={6}
+              required 
+            />
 
-            <div className="flex justify-between gap-2">
-              {otpInput.map((data, index) => (
-                <input
-                  key={index}
-                  ref={el => inputRefs.current[index] = el}
-                  type="text"
-                  maxLength="1"
-                  value={data}
-                  onChange={e => handleOtpChange(e.target, index)}
-                  onFocus={e => e.target.select()}
-                  className="w-10 h-12 bg-slate-900 border border-slate-700 rounded-lg text-center text-white text-xl font-bold focus:border-indigo-500 outline-none transition"
-                />
-              ))}
-            </div>
-
-            <button onClick={verifyOTP} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-white transition shadow-lg shadow-emerald-500/20 active:scale-95">
-              Verify OTP
+            <button disabled={loading} type="submit" className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl transition shadow-lg">
+              {loading ? 'Verifying...' : 'Verify & Enter'}
             </button>
-          </div>
+          </form>
         )}
       </div>
     </div>
   );
 }
-
-Gatekeeper.propTypes = {
-  type: PropTypes.string.isRequired,
-  onBack: PropTypes.func.isRequired,
-  onSuccess: PropTypes.func.isRequired, // Added requirement
-};
