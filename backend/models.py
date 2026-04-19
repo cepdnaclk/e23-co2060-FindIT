@@ -13,7 +13,6 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     otp_code = Column(String(6), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-
     items = relationship("Item", back_populates="reporter")
 
 # --- 2. Item Model ---
@@ -26,8 +25,11 @@ class Item(Base):
     category = Column(String(100), nullable=False)
     location = Column(String(255), nullable=False)
     item_type = Column(String(50), nullable=False)
-    lost_date = Column(String(50), nullable=True) # e.g., "2026-02-24"
-    lost_time = Column(String(50), nullable=True) # e.g., "14:30"
-    image_url = Column(String(500), nullable=True) 
+    date = Column(String(50), nullable=True) 
+    time = Column(String(50), nullable=True) 
+    image_url = Column(Text, nullable=True) # Upgraded to Text for Firebase URLs
+    secret_question = Column(String(255), nullable=True)
+    secret_answer = Column(String(255), nullable=True)
+    contact_number = Column(String(500), nullable=True)
     owner_email = Column(String(255), ForeignKey("users.email"))
     reporter = relationship("User", back_populates="items")

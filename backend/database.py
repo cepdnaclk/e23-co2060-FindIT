@@ -19,14 +19,15 @@ else:
 # ---------------------------------------------------
 
 # 3. Setup SSL for Aiven
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+ssl_args = {
+    "ssl_verify_cert": False,
+    "ssl_verify_identity": False
+}
 
 # 4. Create the Engine
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
-    connect_args={"ssl": ctx}
+    connect_args={"ssl": ssl_args}
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
