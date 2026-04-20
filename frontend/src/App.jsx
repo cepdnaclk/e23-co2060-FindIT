@@ -7,14 +7,15 @@ import Selection from './components/Selection';
 import ReportForm from './components/ReportForm';
 import Dashboard from './components/Dashboard';
 import SecretQuestion from './components/SecretQuestion';
+import { compressAndUploadImage } from './uploadLogic';
 import RevealedItemDetails from './components/RevealedItemDetails';
 
 const CATEGORIES = ["Electronics", "IDs/Documents", "Keys", "Wallets/Bags", "Books/Stationary", "Other"];
 
 export default function App() {
-  const [view, setView] = useState('landing');
-  const [reportType, setReportType] = useState('');
+  const [view, setView] = useState(localStorage.getItem('userEmail') ? 'dashboard' : 'landing');  const [reportType, setReportType] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // NEW: Holds the real file for Cloudinary
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [formData, setFormData] = useState({
     category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: ''
@@ -53,9 +54,13 @@ export default function App() {
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file); // NEW: Save the physical file!
+      
+      // Keep your teammate's preview logic intact:
       const reader = new FileReader();
       reader.onload = (e) => setSelectedImage(e.target.result);
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -72,6 +77,9 @@ export default function App() {
         return;
     }
 
+    // We wait for the image to upload and get the URL BEFORE talking to FastAPI
+    // CHANGE THIS:
+    const finalImageUrl = imageFile ? await compressAndUploadImage(imageFile) : null;
     const payload = {
       title: formData.title,
       description: formData.description,
@@ -80,7 +88,7 @@ export default function App() {
       item_type: reportType === 'lost' ? 'Lost' : 'Found',
       date: formData.date,
       time: formData.time,
-      image_url: selectedImage || null,
+      image_url: finalImageUrl, // <--- The bridge is complete!
       secret_question: formData.secretQ,
       secret_answer: formData.secretA,
       contact_number: formData.phone,
@@ -101,6 +109,7 @@ export default function App() {
         alert("Report submitted successfully!");
         setFormData({ category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: '' });
         setSelectedImage(null);
+        setImageFile(null); 
         setView('dashboard');
       } else {
         const err = await response.json();
@@ -116,6 +125,8 @@ export default function App() {
     setUserEmail('');
     setNotifications([]); 
     setFormData({ category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: '' });
+    setSelectedImage(null); 
+    setImageFile(null);     
     setView('landing');
   };
 
