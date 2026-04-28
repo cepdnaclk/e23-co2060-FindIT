@@ -144,9 +144,3 @@ def get_all_items(db: Session = Depends(database.get_db)):
     items = db.query(models.Item).all()
     return items
 
-@router.get("/notifications/{email}")
-def get_user_notifications(email: str, db: Session = Depends(database.get_db)):
-    """Fetch notifications for a specific user to stop the 404 polling error."""
-    
-    # We return an empty list for now so the frontend React code is happy!
-    return []
