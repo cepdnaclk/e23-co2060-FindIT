@@ -4,6 +4,7 @@ from typing import List, Optional
 # --- Phase 1: Authentication Schemas ---
 class EmailRequest(BaseModel):
     email: EmailStr
+    full_name: Optional[str] = None 
 
 class OTPVerifyRequest(BaseModel):
     email: EmailStr
