@@ -17,9 +17,8 @@ class ItemCreate(BaseModel):
     category: str
     location: str
     item_type: str
-    date: str          
-    time: str          
-    owner_email: str
+    date: str 
+    time: str
     image_url: Optional[str] = None
     secret_question: str
     secret_answer: str
