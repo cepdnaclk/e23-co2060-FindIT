@@ -43,6 +43,28 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
         item_type=new_item.item_type,
         db_session=db
     )
+    
+    for match in match_results:
+        matched_db_item = db.query(models.Item).filter(models.Item.id == match["id"]).first()
+        if matched_db_item:
+            # 1. Notify the person who is submitting right now
+            new_notif = models.Notification(
+                user_email=item.owner_email, 
+                message=f"A potential match was found for your {item.title}!",
+                matched_item_id=matched_db_item.id
+            )
+            db.add(new_notif)
+            
+            # 2. Notify the person who submitted the old matching item
+            if matched_db_item.owner_email:
+                other_notif = models.Notification(
+                    user_email=matched_db_item.owner_email,
+                    message=f"Someone just reported an item that matches your {matched_db_item.title}!",
+                    matched_item_id=new_item.id
+                )
+                db.add(other_notif)
+            
+            db.commit()
 
     # 3. Return the saved item and the potential matches
     return {
@@ -84,3 +106,34 @@ def verify_claim(claim: schemas.ClaimRequest, db: Session = Depends(database.get
         "message": "Verification successful!",
         "phone_number": decrypted_phone  # Returning the decrypted, readable number
     }
+
+
+@router.get("/notifications/{email}")
+def get_notifications(email: str, db: Session = Depends(database.get_db)):
+    # Fetch all unread notifications for this specific user
+    notifications = db.query(models.Notification).filter(
+        models.Notification.user_email == email,
+        models.Notification.is_read == False
+    ).all()
+    
+    result = []
+    for notif in notifications:
+        if notif.matched_item:
+            # Package the data exactly how the React frontend expects it
+            result.append({
+                "id": notif.id,
+                "message": notif.message,
+                "item": {
+                    "id": notif.matched_item.id,
+                    "title": notif.matched_item.title,
+                    "secret_question": notif.matched_item.secret_question,
+                    "secret_answer": notif.matched_item.secret_answer,
+                    "description": notif.matched_item.description,
+                    "location": notif.matched_item.location,
+                    "category": notif.matched_item.category,
+                    "image_url": notif.matched_item.image_url,
+                    "owner_email": notif.matched_item.owner_email,
+                    "contact_number": notif.matched_item.contact_number
+                }
+            })
+    return result

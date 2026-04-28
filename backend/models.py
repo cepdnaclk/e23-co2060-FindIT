@@ -35,3 +35,15 @@ class Item(Base):
     contact_number = Column(String(500), nullable=True)
     owner_email = Column(String(255), ForeignKey("users.email"))
     reporter = relationship("User", back_populates="items")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_email = Column(String(255), ForeignKey("users.email"))
+    message = Column(String(500))
+    matched_item_id = Column(Integer, ForeignKey("items.id"))
+    is_read = Column(Boolean, default=False)
+    
+    # Links the notification directly to the matched item details
+    matched_item = relationship("Item")
