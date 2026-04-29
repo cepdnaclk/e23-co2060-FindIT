@@ -4,15 +4,38 @@ import { Lock, ArrowLeft } from 'lucide-react';
 export default function SecretQuestion({ item, onSuccess, onBack }) {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    // Verify answer against the real data from the database (case insensitive for UX)
-    if (answer.trim().toLowerCase() === item.secret_answer.toLowerCase()) {
-      onSuccess();
-    } else {
-      setError("Incorrect answer. Please try again.");
+    try {
+      // Send the guess to the FastAPI backend
+      const apiUrl = import.meta.env?.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/items/verify-claim` : "http://localhost:8000/items/verify-claim";
+      
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          item_id: item.id,
+          user_answer: answer
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Success! Pass the DECRYPTED phone number back to App.jsx
+        onSuccess(data.phone_number);
+      } else {
+        const errData = await response.json();
+        setError(errData.detail || "Incorrect answer. Please try again.");
+      }
+    } catch (err) {
+      setError("Failed to connect to the server.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,8 +71,8 @@ export default function SecretQuestion({ item, onSuccess, onBack }) {
             />
             {error && <p className="text-rose-400 text-sm mt-2 font-medium">{error}</p>}
           </div>
-          <button type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg">
-            Verify & View Item
+          <button disabled={loading} type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl transition shadow-lg">
+            {loading ? 'Verifying...' : 'Verify & View Item'}
           </button>
         </form>
       </div>

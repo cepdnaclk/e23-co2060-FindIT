@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Tag, MapPin, Loader2 } from 'lucide-react';
+import { Tag, MapPin, Loader2, Calendar, Clock } from 'lucide-react';
 import LostItemDetails from './LostItemDetails';
 
 export default function Dashboard({ onViewMatches, onCreateReport, currentUser, showMatches = false, matchedPairs = [] }) {
@@ -92,51 +92,66 @@ export default function Dashboard({ onViewMatches, onCreateReport, currentUser, 
                 onClick={() => handleItemClick(item)}
               >
                 
-                {/* Image with Type Tag */}
-                <div className="relative aspect-video bg-slate-900 flex items-center justify-center border-b border-slate-700/50">
+                {/* 1. Image Section with Category & Status Tags */}
+                <div className="relative aspect-video bg-slate-900 flex items-center justify-center border-b border-slate-700/50 overflow-hidden">
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={item.image_url} alt={item.title || "Lost Item"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <span className="text-slate-600 font-bold text-sm">No Image</span>
                   )}
-                  <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold uppercase bg-orange-500/10 text-orange-400 border border-orange-500/30 shadow-sm backdrop-blur-sm">
+                  {/* LOST Badge */}
+                  <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-orange-500/90 text-white shadow-sm backdrop-blur-sm">
                       LOST
                   </span>
+                  {/* Category Badge */}
+                  {item.category && (
+                    <span className="absolute top-4 right-4 flex items-center gap-1 text-white text-[10px] font-bold bg-slate-800/90 px-2.5 py-1 rounded-full shadow-sm backdrop-blur-sm">
+                      <Tag size={12} className="text-slate-300"/> {item.category}
+                    </span>
+                  )}
                 </div>
 
-                {/* Description */}
-                <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
-                   <div className='space-y-3'>
-                      <h3 className="text-2xl font-black text-white group-hover:text-indigo-400 transition truncate">{item.title}</h3>
-                      <p className="text-slate-300 text-base line-clamp-3 leading-relaxed">{item.description}</p>
+                {/* 2. Middle Body: Title, Description, Date/Time */}
+                <div className="p-5 flex-grow flex flex-col">
+                   <div className="mb-4">
+                       <h3 className="text-xl font-black text-white group-hover:text-indigo-400 transition truncate">{item.title}</h3>
+                       {/* Line-clamp-2 keeps the description to exactly 2 lines so cards stay the same height */}
+                       <p className="text-slate-400 text-sm line-clamp-2 mt-1.5 leading-relaxed">{item.description}</p>
                    </div>
-                    <div className="flex items-center gap-2 pt-2">
-                        {item.category && (
-                          <span className="flex items-center gap-1.5 text-slate-400 text-xs bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
-                            <Tag size={14}/> {item.category}
-                          </span>
-                        )}
-                    </div>
+
+                   {/* Date & Time at the bottom of the middle section */}
+                   <div className="flex items-center gap-4 text-slate-300 text-xs mt-auto pt-4 border-t border-slate-800">
+                      <div className="flex items-center gap-1.5">
+                          <Calendar size={14} className="text-emerald-400"/>
+                          <span className="font-medium">{item.date || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                          <Clock size={14} className="text-sky-400"/>
+                          <span className="font-medium">{item.time || "N/A"}</span>
+                      </div>
+                   </div>
                 </div>
-                
-                {/* Bottom Info Bar */}
-                <div className="p-6 border-t border-slate-700/50 flex items-center justify-between text-slate-200">
-                  <div className="flex items-center gap-2">
-                      <div className="p-2 bg-slate-800 rounded-lg"><MapPin size={16} className="text-indigo-400"/></div>
-                      <p className="text-sm font-semibold truncate max-w-[150px]">{item.location}</p>
+
+                {/* 3. Bottom Footer: Location */}
+                <div className="p-4 bg-slate-900/50 border-t border-slate-700/50 flex items-center text-slate-200">
+                  <div className="flex items-center gap-2.5 w-full">
+                      <div className="p-1.5 bg-slate-800 rounded-md"><MapPin size={16} className="text-indigo-400"/></div>
+                      <p className="text-sm font-bold truncate">{item.location}</p>
                   </div>
                 </div>
+
               </div>
             ))}
           </div>
         )}
-      </section>
-
+        </section>
+     
        {/* Conditionally Render the Detail Modal */}
        {showDetails && selectedLostItem && (
           <LostItemDetails
             item={selectedLostItem}
             onClose={() => setShowDetails(false)}
+            currentUserEmail={currentUser}
           />
        )}
     </div>

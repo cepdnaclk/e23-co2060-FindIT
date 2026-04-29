@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, MapPin, Calendar, Clock, Tag } from 'lucide-react';
+import { X, MapPin, Calendar, Clock, Tag, Trash2} from 'lucide-react';
 
-const LostItemDetails = ({ item, onClose }) => {
+const LostItemDetails = ({ item, onClose, currentUserEmail }) => {
   if (!item) return null;
 
   const formatDate = (dateString) => {
@@ -17,18 +17,49 @@ const LostItemDetails = ({ item, onClose }) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this report?")) return;
+
+    try {
+      const response = await fetch(`http://localhost:8000/items/${item.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert("Report deleted!");
+        window.location.reload(); // Quickest way to refresh the dashboard
+      } else {
+        alert("Failed to delete item.");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
+  };
+  
   return (
     <div className="fixed inset-0 bg-slate-900/90 flex items-center justify-center z-50 p-4 animate-in fade-in duration-300 backdrop-blur-sm">
       <div className="bg-slate-800 border border-slate-700 w-full max-w-4xl rounded-3xl p-8 relative shadow-2xl overflow-y-auto max-h-[90vh]">
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-6 right-6 text-slate-400 hover:text-white transition"
-        >
-          <X size={24} />
-        </button>
+        <div className="absolute top-6 right-6 flex items-center gap-4 z-10">
+          
+          {/* Only show delete button if the logged-in user owns this item */}
+          {item.owner_email === currentUserEmail && (
+             <button 
+               onClick={handleDelete}
+               className="text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500 p-2 rounded-full transition"
+               title="Delete Report"
+             >
+               <Trash2 size={20} />
+             </button>
+          )}
+
+          <button onClick={onClose} className="text-slate-400 hover:text-white bg-slate-700/50 hover:bg-slate-700 p-2 rounded-full transition">
+            <X size={20} />
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+
           {/* Image Section */}
           <div className="rounded-2xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center border border-slate-700">
             {item.image_url ? (

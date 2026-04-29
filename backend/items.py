@@ -144,3 +144,18 @@ def get_all_items(db: Session = Depends(database.get_db)):
     items = db.query(models.Item).all()
     return items
 
+@router.delete("/{item_id}")
+def delete_item(item_id: int, db: Session = Depends(database.get_db)):
+    # 1. Find the item
+    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # 2. Delete any notifications linked to this item (prevents MySQL foreign key crash)
+    db.query(models.Notification).filter(models.Notification.matched_item_id == item_id).delete()
+    
+    # 3. Delete the actual item
+    db.delete(db_item)
+    db.commit()
+    
+    return {"message": "Item deleted successfully!"}

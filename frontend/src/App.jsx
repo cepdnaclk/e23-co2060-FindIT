@@ -152,7 +152,7 @@ export default function App() {
       {view === 'landing' && (
         <>
           <Landing setView={setView} />
-          <Dashboard />
+          <Dashboard currentUser={userEmail} />
         </>
       )}
 
@@ -160,7 +160,7 @@ export default function App() {
         <div className="flex flex-col">
           <Selection setReportType={setReportType} setView={setView} setSelectedImage={setSelectedImage} />
           <div className="px-6 md:px-10"><hr className="border-slate-800 my-2"/></div>
-          <Dashboard />
+          <Dashboard currentUser={userEmail} />
         </div>
       )}
 
@@ -176,7 +176,17 @@ export default function App() {
       {view === 'secret_question' && selectedNotification && (
         <SecretQuestion 
           item={selectedNotification.item} 
-          onSuccess={() => setView('revealed_item')}
+          onSuccess={(decryptedPhone) => {
+            // Swap the encrypted number with the decrypted one!
+            setSelectedNotification({
+              ...selectedNotification,
+              item: {
+                ...selectedNotification.item,
+                contact_number: decryptedPhone
+              }
+            });
+            setView('revealed_item');
+          }}
           onBack={() => setView('dashboard')}
         />
       )}
