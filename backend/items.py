@@ -63,7 +63,7 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
                     matched_item_id=new_item.id
                 )
                 db.add(other_notif)
-            
+           
             db.commit()
 
     # 3. Return the saved item and the potential matches
@@ -113,7 +113,6 @@ def get_notifications(email: str, db: Session = Depends(database.get_db)):
     # Fetch all unread notifications for this specific user
     notifications = db.query(models.Notification).filter(
         models.Notification.user_email == email,
-        models.Notification.is_read == False
     ).all()
     
     result = []

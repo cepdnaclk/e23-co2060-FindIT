@@ -16,7 +16,10 @@ export default function Dashboard({ onViewMatches, onCreateReport, currentUser, 
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await fetch("http://localhost:8000/items/");
+        const apiUrl = import.meta.env.VITE_API_URL 
+       ? `${import.meta.env.VITE_API_URL}/items/` 
+       : "http://localhost:8000/items/";
+        const response = await fetch(apiUrl);
         if (!response.ok) throw new Error("Server error");
         const data = await response.json();
         setItems(Array.isArray(data) ? data : []);

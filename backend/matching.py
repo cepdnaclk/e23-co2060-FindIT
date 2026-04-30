@@ -19,9 +19,11 @@ def find_matches(new_item_text: str, category: str, item_type: str, db_session):
             continue
 
         # 3. Fuzzy match scoring (Token Set Ratio handles word reordering well)
-        score = fuzz.token_set_ratio(new_item_text.lower(), db_item.description.lower())
+        # Concatenate title and description for a richer comparison
+        db_text_to_compare = f"{db_item.title} {db_item.description}".lower()
+        score = fuzz.token_set_ratio(new_item_text.lower(), db_text_to_compare)
 
-        if score >= 70:
+        if score >= 60:
             # 4. Pull reporter name using the User relationship
             user_name = "Anonymous" # Default value
             if db_item.reporter and db_item.reporter.full_name:
