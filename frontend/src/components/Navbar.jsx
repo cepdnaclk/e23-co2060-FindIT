@@ -14,7 +14,7 @@ export default function Navbar({ view, setView, handleLogout, notifications, onN
       </div>
       <div className="flex items-center space-x-6">
         
-        {/* Bell Icon & Notifications Dropdown (Hidden on landing/login pages) */}
+        {/* Bell Icon & Notifications Dropdown */}
         {view !== 'landing' && view !== 'signin' && view !== 'login' && (
           <div className="relative">
             <button 
@@ -31,24 +31,30 @@ export default function Navbar({ view, setView, handleLogout, notifications, onN
 
             {/* Dropdown Menu */}
             {showDropdown && (
-              <div className="absolute right-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl py-2 z-50 animate-in slide-in-from-top-2">
+              <div className="absolute right-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl py-2 z-50 animate-in slide-in-from-top-2 overflow-hidden">
                 <h3 className="px-4 py-2 text-sm font-bold text-slate-300 border-b border-slate-700/50 mb-1">Notifications</h3>
-                {notifications?.length > 0 ? (
-                  notifications.map(notif => (
-                    <div 
-                      key={notif.id}
-                      onClick={() => {
-                        setShowDropdown(false);
-                        onNotificationClick(notif);
-                      }}
-                      className="px-4 py-3 hover:bg-slate-700/50 cursor-pointer transition border-b border-slate-700/50 last:border-0 group"
-                    >
-                      <p className="text-sm text-slate-300 group-hover:text-white leading-tight">{notif.message}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="px-4 py-4 text-sm text-slate-500 text-center">No new notifications</div>
-                )}
+                
+                {/* 🛑 THIS IS THE NEW SCROLLABLE WRAPPER 🛑 */}
+                <div className="max-h-80 overflow-y-auto overscroll-contain">
+                  {notifications?.length > 0 ? (
+                    notifications.map(notif => (
+                      <div 
+                        key={notif.id}
+                        onClick={() => {
+                          setShowDropdown(false);
+                          onNotificationClick(notif);
+                        }}
+                        className="px-4 py-3 hover:bg-slate-700/50 cursor-pointer transition border-b border-slate-700/50 last:border-0 group"
+                      >
+                        <p className="text-sm text-slate-300 group-hover:text-white leading-tight">{notif.message}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-4 text-sm text-slate-500 text-center">No new notifications</div>
+                  )}
+                </div>
+                {/* 🛑 END OF SCROLLABLE WRAPPER 🛑 */}
+
               </div>
             )}
           </div>

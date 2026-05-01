@@ -3,8 +3,8 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function Gatekeeper({ type, onBack, onSuccess }) { 
   const [formData, setFormData] = useState({ name: '', email: '' });
-  const [otp, setOtp] = useState(''); // Stores the OTP the user types in
-  const [step, setStep] = useState('email'); // Toggles between 'email' and 'otp' screens
+  const [otp, setOtp] = useState(''); 
+  const [step, setStep] = useState('email'); 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -15,13 +15,13 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
     setLoading(true);
 
     try {
-      // Enforce university email domain
       if (!formData.email.endsWith("@eng.pdn.ac.lk")) {
         throw new Error("Only @eng.pdn.ac.lk emails are permitted.");
       }
 
-      // Call your FastAPI /send-otp endpoint
-      const response = await fetch("http://localhost:8000/send-otp", {
+      // CHANGE 1: Use the environment variable here
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: formData.email, name: formData.name })
@@ -32,7 +32,6 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
         throw new Error(errData.detail || "Failed to send OTP. Is the backend running?");
       }
 
-      // Success! Move to the OTP verification screen
       setStep('otp');
     } catch (err) {
       setError(err.message);
@@ -48,11 +47,11 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
     setLoading(true);
 
     try {
-      // Call your FastAPI /verify-otp endpoint
-      const response = await fetch("http://localhost:8000/verify-otp", {
+      // CHANGE 2: Use the environment variable here as well
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // NOTE: Make sure the key matches your schemas.py. It might be "otp" or "otp_code"
         body: JSON.stringify({ email: formData.email, otp: otp }) 
       });
 
@@ -61,7 +60,6 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
         throw new Error(errData.detail || "Invalid or expired OTP.");
       }
 
-      // OTP is correct! Grant access to the app
       onSuccess(formData.email);
     } catch (err) {
       setError(err.message);
