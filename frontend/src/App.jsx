@@ -28,7 +28,11 @@ export default function App() {
     if (userEmail && view !== 'landing' && view !== 'signin' && view !== 'login') {
       const fetchNotifications = async () => {
         try {
-          const response = await fetch(`http://localhost:8000/items/notifications/${userEmail}`);
+            // Dynamic URL that works on both Render and Localhost
+            const baseUrl = import.meta.env?.VITE_API_URL 
+            ? `${import.meta.env.VITE_API_URL}/items` 
+            : "http://localhost:8000/items";
+          const response = await fetch(`${baseUrl}/notifications/${userEmail}`);
           if (response.ok) {
             const data = await response.json();
             setNotifications(data);
