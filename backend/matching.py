@@ -1,7 +1,7 @@
 from thefuzz import fuzz
 import models
 
-def find_matches(new_item_text: str, category: str, item_type: str, db_session):
+def find_matches(new_item_title: str, new_item_desc: str, category: str, item_type: str, db_session):
     # 1. Flip the target: If I lost something, show me what people found
     target_type = "Found" if item_type == "Lost" else "Lost"
     
@@ -14,16 +14,21 @@ def find_matches(new_item_text: str, category: str, item_type: str, db_session):
     potential_matches = []
 
     for db_item in query_results:
-        # Safety check for exact category match
+        # Safety check for exact category match (STAGE 1)
         if db_item.category != category:
             continue
 
-        # 3. Fuzzy match scoring (Token Set Ratio handles word reordering well)
-        # Concatenate title and description for a richer comparison
-        db_text_to_compare = f"{db_item.title} {db_item.description}".lower()
-        score = fuzz.token_set_ratio(new_item_text.lower(), db_text_to_compare)
+        # Higher threshold (70+) ensures Laptop != Earphone
+        title_score = fuzz.token_sort_ratio(new_item_title.lower(), db_item.title.lower())
+        
+        if title_score < 70:
+            continue # If the titles don't represent the same object, skip
 
-        if score >= 60:
+        # STAGE 3: Check the Description (The Detail Gate)
+        # Now we only look for details like color, brand, or stickers
+        desc_score = fuzz.token_set_ratio(new_item_desc.lower(), db_item.description.lower())
+
+        if desc_score >= 60:
             # 4. Pull reporter name using the User relationship
             user_name = "Anonymous" # Default value
             if db_item.reporter and db_item.reporter.full_name:
@@ -39,7 +44,7 @@ def find_matches(new_item_text: str, category: str, item_type: str, db_session):
                 "time": db_item.time or "N/A",
                 "secret_question": db_item.secret_question or "No question set",
                 "reported_by": user_name, # This is now guaranteed to be a string
-                "confidence": score
+                "confidence": desc_score
             })
 
     # 6. Sort by highest confidence first

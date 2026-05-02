@@ -62,7 +62,7 @@ export default function Navbar({ view, setView, handleLogout, notifications, onN
 
         {view === 'landing' ? (
           <div className="flex space-x-4">
-            <button onClick={() => setView('signin')} className="px-5 py-2 rounded-xl font-bold border border-slate-700 hover:bg-slate-800 transition">Sign In</button>
+            <button onClick={() => setView('signin')} className="px-5 py-2 rounded-xl font-bold border border-slate-700 hover:bg-slate-800 transition">Sign Up</button>
             <button onClick={() => setView('login')} className="px-5 py-2 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 transition shadow-lg">Log In</button>
           </div>
         ) : (

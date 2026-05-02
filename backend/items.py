@@ -13,7 +13,7 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
     encrypted_contact = encrypt_phone(item.contact_number)
     # 1. Create the database record
     new_item = models.Item(
-        title=item.title,           # Added to match Frontend
+        title=item.title,
         description=item.description,
         category=item.category,
         location=item.location,     # Added to match Frontend
@@ -38,7 +38,8 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
     # 2. Call Member 2's Matching Engine
     # This searches the DB for opposite types (e.g., if this is LOST, it looks for FOUND)
     match_results = find_matches(
-        new_item_text=new_item.description,
+        new_item_title=new_item.title,  # Specifically pass the title for the Noun-Gate
+        new_item_desc=new_item.description,
         category=new_item.category,
         item_type=new_item.item_type,
         db_session=db
