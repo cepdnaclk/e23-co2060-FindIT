@@ -111,9 +111,10 @@ def verify_claim(claim: schemas.ClaimRequest, db: Session = Depends(database.get
 
 @router.get("/notifications/{email}")
 def get_notifications(email: str, db: Session = Depends(database.get_db)):
-    # Fetch all unread notifications for this specific user
+    # Fetch only UNREAD notifications for this specific user
     notifications = db.query(models.Notification).filter(
         models.Notification.user_email == email,
+        models.Notification.is_read == False  # Only fetch unread
     ).all()
     
     result = []
@@ -137,6 +138,16 @@ def get_notifications(email: str, db: Session = Depends(database.get_db)):
                 }
             })
     return result
+
+@router.patch("/notifications/{notif_id}/read")
+def mark_notification_read(notif_id: int, db: Session = Depends(database.get_db)):
+    """Mark a single notification as read so it no longer appears in the bell icon."""
+    notif = db.query(models.Notification).filter(models.Notification.id == notif_id).first()
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    notif.is_read = True
+    db.commit()
+    return {"message": "Notification marked as read"}
 
 @router.get("/")
 def get_all_items(db: Session = Depends(database.get_db)):
