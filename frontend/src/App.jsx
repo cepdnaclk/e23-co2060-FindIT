@@ -135,6 +135,16 @@ export default function App() {
   };
 
   const handleNotificationClick = (notif) => {
+    // Mark as read on backend immediately
+    const baseUrl = import.meta.env?.VITE_API_URL
+      ? `${import.meta.env.VITE_API_URL}/items`
+      : "http://localhost:8000/items";
+    fetch(`${baseUrl}/notifications/${notif.id}/read`, { method: "PATCH" })
+      .catch(err => console.error("Failed to mark notification as read:", err));
+
+    // Remove from local state instantly so bell badge count drops right away
+    setNotifications(prev => prev.filter(n => n.id !== notif.id));
+
     setSelectedNotification(notif);
     setView('secret_question');
   };
