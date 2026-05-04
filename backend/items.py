@@ -4,11 +4,29 @@ import database, models, schemas
 from matching import find_matches
 from fastapi import status 
 from security import decrypt_phone, encrypt_phone
+from vision_service import analyze_item_image
 
 router = APIRouter(prefix="/items", tags=["Items"])
 
+@router.post("/analyze-found-item")
+async def analyze_found_item(request: schemas.ImageAnalysisRequest):
+    try:
+        ai_suggestions = analyze_item_image(request.image_url)
+        return ai_suggestions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="AI Analysis failed.")
+
 @router.post("/", response_model=schemas.ItemResponse)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)):
+    # 1. NEW: Let AI fill the details if an image is provided
+    if item.image_url:
+        ai_data = analyze_item_image(item.image_url)
+        item.title = ai_data.get("title", item.title)
+        item.category = ai_data.get("category", item.category)
+        item.description = ai_data.get("description", item.description)
+        item.secret_question = ai_data.get("secret_question", item.secret_question)
+        item.secret_answer = ai_data.get("secret_answer", item.secret_answer)
+    
     # Encrypt the contact number before saving to the database
     encrypted_contact = encrypt_phone(item.contact_number)
     # 1. Create the database record
@@ -84,29 +102,50 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
 
 @router.post("/verify-claim")
 def verify_claim(claim: schemas.ClaimRequest, db: Session = Depends(database.get_db)):
-    # 1. Database Querying: Fetch the item by ID
+    # 1. Fetch the item
     db_item = db.query(models.Item).filter(models.Item.id == claim.item_id).first()
-    
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    # 2. The "Match" Logic: Simple string comparison
-    if db_item.secret_answer.strip().lower() != claim.user_answer.strip().lower():
-        # 3. Failure Route: 403 Forbidden
+    # 2. ADMIN LOCKOUT CHECK: See if this user is already locked out
+    alert = db.query(models.AdminAlert).filter(
+        models.AdminAlert.found_item_id == claim.item_id,
+        models.AdminAlert.claimer_email == claim.user_email 
+    ).first()
+
+    if alert and alert.failed_attempts >= 2 and not alert.is_resolved:
+        raise HTTPException(status_code=403, detail="Account locked for this item. An admin has been notified.")
+
+    # 3. VERIFY ANSWER
+    if db_item.secret_answer.strip().lower() == claim.user_answer.strip().lower():
+        # SUCCESS: Decrypt the phone number and return it
+        decrypted_phone = decrypt_phone(db_item.contact_number)
+        return {
+            "status": "success",
+            "message": "Verification successful!",
+            "phone_number": decrypted_phone 
+        }
+    else:
+        # FAILED: Increment the tracker
+        if not alert:
+            # First time failing
+            alert = models.AdminAlert(found_item_id=claim.item_id, claimer_email=claim.user_email, failed_attempts=1)
+            db.add(alert)
+        else:
+            # Failed again
+            alert.failed_attempts += 1
+        
+        db.commit()
+
+        # Check if this failure just locked them out
+        if alert.failed_attempts >= 2:
+            raise HTTPException(status_code=403, detail="Maximum attempts reached. Account locked for this item. An admin has been notified.")
+
+        # Otherwise, tell them they failed but have tries left
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
-            detail="Security answer is incorrect. Access denied."
+            detail=f"Security answer is incorrect. You have {2 - alert.failed_attempts} attempt(s) left."
         )
-
-    # 4. Success Route: Integrate BE2 Decryption Logic
-    # We decrypt the scrambled contact number stored in the database
-    decrypted_phone = decrypt_phone(db_item.contact_number)
-    
-    return {
-        "status": "success",
-        "message": "Verification successful!",
-        "phone_number": decrypted_phone  # Returning the decrypted, readable number
-    }
 
 
 @router.get("/notifications/{email}")
@@ -138,6 +177,7 @@ def get_notifications(email: str, db: Session = Depends(database.get_db)):
                 }
             })
     return result
+
 
 @router.patch("/notifications/{notif_id}/read")
 def mark_notification_read(notif_id: int, db: Session = Depends(database.get_db)):

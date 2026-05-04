@@ -83,7 +83,7 @@ export default function App() {
 
     // We wait for the image to upload and get the URL BEFORE talking to FastAPI
     // CHANGE THIS:
-    const finalImageUrl = imageFile ? await compressAndUploadImage(imageFile) : null;
+    const finalImageUrl = imageFile ? await compressAndUploadImage(imageFile) : formData.image_url;
     const payload = {
       title: formData.title,
       description: formData.description,
@@ -182,7 +182,8 @@ export default function App() {
         <ReportForm 
           reportType={reportType} setView={setView} selectedImage={selectedImage}
           setSelectedImage={setSelectedImage} handleImageChange={handleImageChange}
-          formData={formData} handleInputChange={handleInputChange} handleSubmit={handleSubmit}
+          formData={formData} 
+          setFormData={setFormData} handleInputChange={handleInputChange} handleSubmit={handleSubmit}
           CATEGORIES={CATEGORIES}
         />
       )}

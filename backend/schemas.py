@@ -1,5 +1,9 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
+from datetime import datetime
+
+class ImageAnalysisRequest(BaseModel):
+    image_url: str
 
 # --- Phase 1: Authentication Schemas ---
 class EmailRequest(BaseModel):
@@ -62,3 +66,22 @@ class ClaimRequest(BaseModel):
     """Used when a user tries to answer a secret question to claim an item"""
     item_id: int
     user_answer: str
+    user_email: str
+
+# --- ADMIN ALERT SCHEMAS ---
+class AdminAlertBase(BaseModel):
+    found_item_id: int
+    claimer_email: str
+    failed_attempts: int
+    is_resolved: bool
+
+class AdminAlertResponse(AdminAlertBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True # Allows Pydantic to read SQLAlchemy models
+
+class ForceMatchRequest(BaseModel):
+    found_item_id: int
+    claimer_email: str
