@@ -50,7 +50,7 @@ export default function ReportForm({
       const uploadedUrl = await compressAndUploadImage(file);
       
       // 3. Call Backend for Gemini Analysis
-      const apiUrl = "http://localhost:8000";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";;
       const response = await fetch(`${apiUrl}/items/analyze-found-item`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
