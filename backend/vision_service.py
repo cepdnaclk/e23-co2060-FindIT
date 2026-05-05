@@ -56,3 +56,31 @@ def analyze_item_image(image_url: str):
             "secret_question": "",
             "secret_answer": ""
         }
+
+# Add this at the bottom of vision_service.py
+def generate_smart_keywords(title: str, description: str, category: str) -> str:
+    """
+    Uses Gemini to translate Singlish and expand abbreviations into a clean keyword list.
+    """
+    try:
+        prompt = f"""
+        Extract standard English keywords from this lost/found item report.
+        - Translate any Sri Lankan/Singlish words (e.g., 'kudaya' -> 'umbrella', 'potha' -> 'book').
+        - Expand abbreviations (e.g., 'Uni ID' -> 'University Identity Card').
+        - Include the category and key features (colors, brands).
+        
+        Return ONLY a lowercase, space-separated list of keywords. No punctuation.
+        
+        Title: {title}
+        Description: {description}
+        Category: {category}
+        """
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text.strip().lower()
+    except Exception as e:
+        print(f"Keyword Gen Failed: {e}")
+        # Fallback to the raw text if AI is busy
+        return f"{title} {description} {category}".lower()

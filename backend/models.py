@@ -32,6 +32,7 @@ class Item(Base):
     secret_answer = Column(String(255), nullable=True)
     contact_number = Column(String(500), nullable=True)
     owner_email = Column(String(255), ForeignKey("users.email"))
+    search_keywords = Column(Text, nullable=True)
     reporter = relationship("User", back_populates="items")
 
 class Notification(Base):

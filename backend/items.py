@@ -4,7 +4,7 @@ import database, models, schemas
 from matching import find_matches
 from fastapi import status 
 from security import decrypt_phone, encrypt_phone
-from vision_service import analyze_item_image
+from vision_service import analyze_item_image, generate_smart_keywords
 
 router = APIRouter(prefix="/items", tags=["Items"])
 
@@ -18,17 +18,13 @@ async def analyze_found_item(request: schemas.ImageAnalysisRequest):
 
 @router.post("/", response_model=schemas.ItemResponse)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)):
-    # 1. NEW: Let AI fill the details if an image is provided
-    if item.image_url:
-        ai_data = analyze_item_image(item.image_url)
-        item.title = ai_data.get("title", item.title)
-        item.category = ai_data.get("category", item.category)
-        item.description = ai_data.get("description", item.description)
-        item.secret_question = ai_data.get("secret_question", item.secret_question)
-        item.secret_answer = ai_data.get("secret_answer", item.secret_answer)
-    
     # Encrypt the contact number before saving to the database
     encrypted_contact = encrypt_phone(item.contact_number)
+
+   #  Generate the hidden smart tags using Gemini
+    smart_tags = generate_smart_keywords(item.title, item.description, item.category)
+
+    print(f"\n🧠 AI GENERATED TAGS FOR {item.title}: {smart_tags}\n")
     # 1. Create the database record
     new_item = models.Item(
         title=item.title,
@@ -42,7 +38,8 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
         secret_question=item.secret_question, 
         secret_answer=item.secret_answer,
         contact_number=encrypted_contact,
-        owner_email=item.owner_email
+        owner_email=item.owner_email,
+        search_keywords=smart_tags
     )
     
     try:
@@ -53,11 +50,10 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-    # 2. Call Member 2's Matching Engine
+    # 2. Call the Matching Engine
     # This searches the DB for opposite types (e.g., if this is LOST, it looks for FOUND)
     match_results = find_matches(
-        new_item_title=new_item.title,  # Specifically pass the title for the Noun-Gate
-        new_item_desc=new_item.description,
+        new_item_keywords=smart_tags,
         category=new_item.category,
         item_type=new_item.item_type,
         db_session=db
