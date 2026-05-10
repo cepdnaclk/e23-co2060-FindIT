@@ -101,7 +101,7 @@ export default function App() {
 
     try {
       // Allows using VITE_API_URL for Render deployment, or localhost for local testing
-      const apiUrl = import.meta.env?.VITE_API_URL ||"http://localhost:8000/items/";
+      const apiUrl = import.meta.env?.VITE_API_URL ||"http://localhost:8000";;
       
       const response = await fetch(apiUrl, {
         method: "POST",

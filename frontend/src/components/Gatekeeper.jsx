@@ -8,7 +8,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 1. Send the OTP to the user's email
+// 1. Send the OTP to the user's email
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError("");
@@ -19,17 +19,31 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
         throw new Error("Only @eng.pdn.ac.lk emails are permitted.");
       }
 
-      // CHANGE 1: Use the environment variable here
       const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/send-otp`, {
+      
+      // DIAGNOSTIC LOG: This will print exactly where the app is sending the request
+      const targetUrl = `${apiUrl}/send-otp`;
+      console.log("🚀 ATTEMPTING TO SEND OTP TO:", targetUrl);
+
+      const response = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: formData.email, name: formData.name })
       });
 
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || "Failed to send OTP. Is the backend running?");
+        // BULLETPROOF ERROR HANDLING: Read as raw text first
+        const errorText = await response.text();
+        console.error(`❌ RAW BACKEND RESPONSE (${response.status}):`, errorText);
+        
+        let errData = {};
+        try {
+            errData = JSON.parse(errorText); // Try to convert to JSON safely
+        } catch (parseError) {
+            throw new Error(`Server returned Error ${response.status}. Open F12 Console for details.`);
+        }
+        
+        throw new Error(errData.detail || "Failed to send OTP.");
       }
 
       setStep('otp');
@@ -47,16 +61,27 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
     setLoading(true);
 
     try {
-      // CHANGE 2: Use the environment variable here as well
       const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/verify-otp`, {
+      const targetUrl = `${apiUrl}/verify-otp`;      
+      console.log("🚀 ATTEMPTING TO VERIFY OTP AT:", targetUrl);
+
+      const response = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: formData.email, otp: otp }) 
       });
 
       if (!response.ok) {
-        const errData = await response.json();
+        const errorText = await response.text();
+        console.error(`❌ RAW BACKEND RESPONSE (${response.status}):`, errorText);
+        
+        let errData = {};
+        try {
+            errData = JSON.parse(errorText);
+        } catch (parseError) {
+            throw new Error(`Server returned Error ${response.status}. Open F12 Console for details.`);
+        }
+        
         throw new Error(errData.detail || "Invalid or expired OTP.");
       }
 

@@ -1,0 +1,68 @@
+83b1ad6 - Thenuk, 4 hours ago : fix: update api url to use env variable and add scrolling to notifications
+9e720b3 - Lihini Silva, 14 hours ago : Merge branch 'main' of https://github.com/cepdnaclk/e23-co2060-FindIT
+1040614 - Lihini Silva, 14 hours ago : feat:optimize fuzzy matching to 60 threshold and fix production API routing
+1fcff52 - Thenuk Piyathilake, 2 days ago : Update index.md
+cbc4a07 - Lihini Silva, 2 days ago : feat(dashboard): add Lost item reporting and secure decryption capabilities
+2600c41 - Lihini Silva, 3 days ago : fix: remove redundant notification endpoint
+0b46074 - Lihini Silva, 3 days ago : fix: resolve merge conflict in items.py
+cccda32 - Lihini Silva, 3 days ago : chore: save local schema updates
+ee93327 - Lihini Silva, 3 days ago : feat: implement in-app notification system for fuzzy matches
+dd4bcfb - Thenuk, 11 days ago : feat: migrate to Cloudinary for image uploads, bypass Firebase, and add GET /items route
+d45a2bd - Thenuk, 12 days ago : chore: fixed App.jsx merge conflicts and cleaned up components
+eff16c4 - dulmina, 7 weeks ago : Update frontend features and UI
+1cb8778 - Lihini Silva, 8 weeks ago : fix: update date and time variable names in matching logic
+c30fd82 - Lihini Silva, 8 weeks ago : fix: remove trailing slash from CORS allowed origins
+d0979aa - Lihini Silva, 8 weeks ago : fix: update CORS origins to allow live Render frontend
+294bb7c - Lihini Silva, 8 weeks ago : Add phone number state and mapped security payload in App.jsx
+52b3d72 - dulmina, 8 weeks ago : Updated frontend components in Dashboard
+495995f - Lihini Silva, 9 weeks ago : feat: add Fernet encryption for contact numbers and build secure verify-claim endpoint
+b2966e7 - Thenuk, 9 weeks ago : Modified frontend to get the info to the backend
+0e9a2c6 - Thenuk, 9 weeks ago : Final Infrastructure Sync: Integrated Title, Location, Date, and Time across Frontend, Schemas, and Models
+fd1eca4 - Thenuk, 2 months ago : Complete infrastructure reset: Synced backend models/schemas with frontend lost & found form
+520e48f - dulmina-weerasinghe, 2 months ago : Update frontend code with new components and styling
+851dcb0 - Lihini Silva, 2 months ago : Update Gatekeeper.jsx
+197982a - Lihini Silva, 2 months ago : Merge pull request #4 from Lihini-Silva/main
+183527e - Lihini Silva, 2 months ago : Migrate email service from Gmail SMTP to Brevo API
+144d438 - Lihini-Silva, 2 months ago : Secured email credentials
+ba283b4 - Lihini-Silva, 2 months ago : Secured email credentials
+6bb2671 - Lihini-Silva, 2 months ago : Fix: emails not sending due to incorrect SMTP setup
+3a4f310 - Lihini-Silva, 2 months ago : Merge branch 'main' of https://github.com/cepdnaclk/e23-co2060-FindIT
+e1a77ac - Lihini-Silva, 2 months ago : Fix: Switch to SMTP_SSL for port 465
+cef6fa2 - Lihini-Silva, 2 months ago : Switch to SMTP_SSL port 465
+49696e4 - Lihini-Silva, 2 months ago : Reset database tables
+b062082 - Lihini-Silva, 2 months ago : Fix API URL to point to live server
+cb59c6f - thenukp, 2 months ago : Complete Phase 2: Aiven integration, models, schemas, and items router
+4c9bc8a - Lihini Silva, 2 months ago : Merge pull request #3 from Lihini-Silva/main
+661bdd0 - Lihini-Silva, 2 months ago : Add fuzzy logic
+9b1549a - Lihini Silva, 3 months ago : Merge pull request #2 from Lihini-Silva/main
+4da20ad - Lihini-Silva, 3 months ago : Connected frontend to backend and updated CORS security
+93af85a - Lihini-Silva, 3 months ago : Updated SSL context for pymysql compatibility
+77fdc93 - Lihini-Silva, 3 months ago : Prepared backend for Render deployment
+b6f1778 - Lihini-Silva, 3 months ago : Add frontend files
+0077f10 - Lihini-Silva, 3 months ago : Add frontend files
+ce6c519 - Lihini-Silva, 3 months ago : Add email-validator to requirements.txt
+a87502c - Lihini-Silva, 3 months ago : Add pymysql to requiremenst.txt
+5be05fe - Lihini-Silva, 3 months ago : Moved the requirements.txt into the backend folder
+7069eaf - Lihini-Silva, 3 months ago : Removed the .env file
+c8763f7 - Thenuk Piyathilake, 3 months ago : Delete app directory
+8f23d19 - Thenuk Piyathilake, 3 months ago : Merge pull request #1 from Lihini-Silva/main
+ac4f190 - Lihini Silva, 3 months ago : Merge branch 'main' into main
+b50e8ec - Lihini-Silva, 3 months ago : feat: integrate MySQL database with secure OTP auth and backend structure
+1e40cde - thenukp, 3 months ago : Merge branch 'main' of https://github.com/cepdnaclk/e23-co2060-FindIT
+a4c0fde - thenukp, 3 months ago : Initial commit: Backend infrastructure, database models, and email validation
+ca10da9 - Lihini-Silva, 3 months ago : feat: complete auth system and SMTP email
+a4ba9e9 - Thenuk Piyathilake, 3 months ago : Add files via upload
+2af873c - thenukp, 3 months ago : Update README.md
+308b0a0 - thenukp, 3 months ago : Update README.md
+c02ba57 - thenukp, 3 months ago : Update README.md
+4f76a4a - thenukp, 3 months ago : Update README.md
+b8f4b0d - thenukp, 3 months ago : Rename README.md to index.md
+df1d94c - thenukp, 3 months ago : Update README.md
+aa5b43a - thenukp, 3 months ago : Update README.md
+86354c5 - thenukp, 3 months ago : Update index.json
+47e10ff - thenukp, 3 months ago : Update README.md
+a3df8cb - thenukp, 3 months ago : Update README.md
+7693e78 - thenukp, 3 months ago : Update README.md
+334bfb7 - thenukp, 3 months ago : Update README.md
+bdf22d1 - thenukp, 3 months ago : Update README.md
+1de922c - thenukp, 3 months ago : Initial commit

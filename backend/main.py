@@ -16,6 +16,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173",
+                   "http://localhost:5174", # <-- Add this line!
                    "https://findit-frontend-e350.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
