@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database, models, schemas
@@ -5,6 +6,8 @@ from matching import find_matches
 from fastapi import status 
 from security import decrypt_phone, encrypt_phone
 from vision_service import analyze_item_image, generate_smart_keywords
+from fastapi import APIRouter, BackgroundTasks
+from email_service import send_match_notification_email # Import your new function
 
 router = APIRouter(prefix="/items", tags=["Items"])
 
@@ -16,25 +19,31 @@ async def analyze_found_item(request: schemas.ImageAnalysisRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail="AI Analysis failed.")
 
+# 1. WE ADDED `background_tasks: BackgroundTasks` TO THE PARAMETERS HERE
 @router.post("/", response_model=schemas.ItemResponse)
-def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)):
+def create_item(
+    item: schemas.ItemCreate, 
+    background_tasks: BackgroundTasks, 
+    db: Session = Depends(database.get_db)
+):
     # Encrypt the contact number before saving to the database
     encrypted_contact = encrypt_phone(item.contact_number)
 
-   #  Generate the hidden smart tags using Gemini
+    # Generate the hidden smart tags using Gemini
     smart_tags = generate_smart_keywords(item.title, item.description, item.category)
 
     print(f"\n🧠 AI GENERATED TAGS FOR {item.title}: {smart_tags}\n")
+    
     # 1. Create the database record
     new_item = models.Item(
         title=item.title,
         description=item.description,
         category=item.category,
-        location=item.location,     # Added to match Frontend
+        location=item.location,     
         item_type=item.item_type,
         date=item.date, 
         time=item.time,
-        image_url=item.image_url,   # The Image link we planned
+        image_url=item.image_url,   
         secret_question=item.secret_question, 
         secret_answer=item.secret_answer,
         contact_number=encrypted_contact,
@@ -51,34 +60,56 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(database.get_db)
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
     # 2. Call the Matching Engine
-    # This searches the DB for opposite types (e.g., if this is LOST, it looks for FOUND)
     match_results = find_matches(
         new_item_keywords=smart_tags,
         category=new_item.category,
         item_type=new_item.item_type,
         db_session=db
     )
+    # This will use your local URL while testing, but gracefully fall back to the live URL in production!
+    frontend_url = os.getenv("FRONTEND_URL", "https://findit-pdn.vercel.app")
+    
     
     for match in match_results:
         matched_db_item = db.query(models.Item).filter(models.Item.id == match["id"]).first()
         if matched_db_item:
-            # 1. Notify the person who is submitting right now
-            new_notif = models.Notification(
-                user_email=item.owner_email, 
-                message=f"A potential match was found for your {item.title}!",
-                matched_item_id=matched_db_item.id
-            )
-            db.add(new_notif)
             
-            # 2. Notify the person who submitted the old matching item
+            # --- NOTIFY SUBMITTER ---
+            if item.owner_email:
+                # App Notification
+                new_notif = models.Notification(
+                    user_email=item.owner_email, 
+                    message=f"A potential match was found for your {item.title}!",
+                    matched_item_id=matched_db_item.id
+                )
+                db.add(new_notif)
+                
+                # Email Notification (Sent in Background)
+                background_tasks.add_task(
+                    send_match_notification_email,
+                    receiver_email=item.owner_email,
+                    item_name=item.title,
+                    match_link=f"{frontend_url}/dashboard/matches/{matched_db_item.id}"
+                )
+                
+            # --- NOTIFY ORIGINAL ITEM OWNER ---
             if matched_db_item.owner_email:
+                # App Notification
                 other_notif = models.Notification(
                     user_email=matched_db_item.owner_email,
                     message=f"Someone just reported an item that matches your {matched_db_item.title}!",
                     matched_item_id=new_item.id
                 )
                 db.add(other_notif)
-           
+                
+                # Email Notification (Sent in Background)
+                background_tasks.add_task(
+                    send_match_notification_email,
+                    receiver_email=matched_db_item.owner_email,
+                    item_name=matched_db_item.title,
+                    match_link=f"{frontend_url}/dashboard/matches/{new_item.id}"
+                )
+            
             db.commit()
 
     # 3. Return the saved item and the potential matches
@@ -206,3 +237,4 @@ def delete_item(item_id: int, db: Session = Depends(database.get_db)):
     db.commit()
     
     return {"message": "Item deleted successfully!"}
+
