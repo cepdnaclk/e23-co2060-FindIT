@@ -32,6 +32,7 @@ class Item(Base):
     secret_answer = Column(String(255), nullable=True)
     contact_number = Column(String(500), nullable=True)
     owner_email = Column(String(255), ForeignKey("users.email"))
+    search_keywords = Column(Text, nullable=True)
     reporter = relationship("User", back_populates="items")
 
 class Notification(Base):
@@ -45,3 +46,13 @@ class Notification(Base):
     
     # Links the notification directly to the matched item details
     matched_item = relationship("Item")
+
+class AdminAlert(Base):
+    __tablename__ = "admin_alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    found_item_id = Column(Integer, ForeignKey("items.id", ondelete="CASCADE"))
+    claimer_email = Column(String(255), index=True)
+    failed_attempts = Column(Integer, default=0)
+    is_resolved = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -83,7 +83,7 @@ export default function App() {
 
     // We wait for the image to upload and get the URL BEFORE talking to FastAPI
     // CHANGE THIS:
-    const finalImageUrl = imageFile ? await compressAndUploadImage(imageFile) : null;
+    const finalImageUrl = imageFile ? await compressAndUploadImage(imageFile) : formData.image_url;
     const payload = {
       title: formData.title,
       description: formData.description,
@@ -101,7 +101,7 @@ export default function App() {
 
     try {
       // Allows using VITE_API_URL for Render deployment, or localhost for local testing
-      const apiUrl = import.meta.env?.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/items/` : "http://localhost:8000/items/";
+      const apiUrl = import.meta.env?.VITE_API_URL ||"http://localhost:8000/items/";
       
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -182,7 +182,8 @@ export default function App() {
         <ReportForm 
           reportType={reportType} setView={setView} selectedImage={selectedImage}
           setSelectedImage={setSelectedImage} handleImageChange={handleImageChange}
-          formData={formData} handleInputChange={handleInputChange} handleSubmit={handleSubmit}
+          formData={formData} 
+          setFormData={setFormData} handleInputChange={handleInputChange} handleSubmit={handleSubmit}
           CATEGORIES={CATEGORIES}
         />
       )}

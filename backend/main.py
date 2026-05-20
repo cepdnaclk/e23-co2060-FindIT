@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import models
 import items  # Import your new items router
+import admin
 from database import engine
 from auth import router as auth_router
 
@@ -26,6 +27,7 @@ app.include_router(auth_router)
 
 # NEW: Attach the items endpoints you are building
 app.include_router(items.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def home():

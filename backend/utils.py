@@ -14,7 +14,7 @@ BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 SENDER_EMAIL = "finditsystem4@gmail.com" 
 SENDER_NAME = "FindIT"
 
-def send_email(recipient_email: str, otp_code: str):
+def send_email(recipient_email:str, content: str, subject: str = "Your FindIT Update"):
     # Setup Brevo Configuration
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key['api-key'] = BREVO_API_KEY
@@ -22,23 +22,39 @@ def send_email(recipient_email: str, otp_code: str):
     # Initialize the API client
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
-    # 1. Define the Email Content
-    subject = "Your FindIT Login Code"
-    html_content = f"""
-    <html>
-        <body style="font-family: sans-serif;">
-            <h2 style="color: #003366;">Welcome to FindIT</h2>
-            <p>Your verification code is:</p>
-            <h1 style="background-color: #f0f0f0; padding: 10px; display: inline-block; letter-spacing: 2px;">
-                {otp_code}
-            </h1>
-            <p>This code expires in 5 minutes.</p>
-            <p><i>If you did not request this, please ignore this email.</i></p>
-        </body>
-    </html>
-    """
+    # Detect if content is an OTP (6 digits) to keep the old styling, 
+    # otherwise treat it as a standard message.
+    is_otp = len(content) == 6 and content.isdigit()
+    
+    if is_otp:
+        # --- THE ORIGINAL OTP TEMPLATE ---
+        email_subject = "Your FindIT Login Code"
+        html_content = f"""
+        <html>
+            <body style="font-family: sans-serif;">
+                <h2 style="color: #003366;">Welcome to FindIT</h2>
+                <p>Your verification code is:</p>
+                <h1 style="background-color: #f0f0f0; padding: 10px; display: inline-block; letter-spacing: 2px;">
+                    {content}
+                </h1>
+                <p>This code expires in 5 minutes.</p>
+                <p><i>If you did not request this, please ignore this email.</i></p>
+            </body>
+        </html>
+        """
+    else:
+        # --- THE ADMIN NOTIFICATION TEMPLATE ---
+        email_subject = subject
+        html_content = f"""
+        <html>
+            <body style="font-family: sans-serif;">
+                <h2 style="color: #003366;">FindIT Notification</h2>
+                <p style="font-size: 16px; line-height: 1.5;">{content}</p>
+                <p><i>Please log in to the app to view the details.</i></p>
+            </body>
+        </html>
+        """
 
-    # 2. Create the SendSmtpEmail object
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
         to=[{"email": recipient_email}],
         sender={"name": SENDER_NAME, "email": SENDER_EMAIL},
@@ -48,13 +64,9 @@ def send_email(recipient_email: str, otp_code: str):
 
     try:
         print(f"🔄 Connecting to Brevo to send to {recipient_email}...")
-        
-        # 3. Send the email via API
         api_response = api_instance.send_transac_email(send_smtp_email)
-        
-        print(f"✅ Email sent successfully! Message ID: {api_response.message_id}")
+        print(f"✅ Email sent successfully! ID: {api_response.message_id}")
         return True
-
     except ApiException as e:
         print(f"❌ Brevo API error: {e}")
         return False
