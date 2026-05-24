@@ -1,7 +1,7 @@
-import { LogOut, Bell } from 'lucide-react';
+import { LogOut, Bell, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 
-export default function Navbar({ view, setView, handleLogout, notifications, onNotificationClick }) {
+export default function Navbar({ view, setView, handleLogout, notifications, onNotificationClick, currentUser }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
@@ -14,6 +14,21 @@ export default function Navbar({ view, setView, handleLogout, notifications, onN
       </div>
       <div className="flex items-center space-x-6">
         
+        {/* Admin Link - Only visible if user is admin and not on landing/auth pages */}
+        {view !== 'landing' && view !== 'signin' && view !== 'login' && currentUser?.isAdmin && (
+          <button 
+            onClick={() => setView('admin')} 
+            className={`flex items-center gap-2 text-sm font-bold transition px-3 py-2 rounded-lg ${
+              view === 'admin' 
+                ? 'text-indigo-400 bg-indigo-500/10' 
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <ShieldCheck size={18} />
+            Admin Panel
+          </button>
+        )}
+
         {/* Bell Icon & Notifications Dropdown */}
         {view !== 'landing' && view !== 'signin' && view !== 'login' && (
           <div className="relative">
@@ -29,17 +44,18 @@ export default function Navbar({ view, setView, handleLogout, notifications, onN
               )}
             </button>
 
-            {/* Dropdown Menu */}
             {showDropdown && (
-              <div className="absolute right-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl py-2 z-50 animate-in slide-in-from-top-2 overflow-hidden">
-                <h3 className="px-4 py-2 text-sm font-bold text-slate-300 border-b border-slate-700/50 mb-1">Notifications</h3>
+              <div className="absolute right-0 mt-3 w-80 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right">
+                <div className="px-4 py-3 border-b border-slate-700 bg-slate-900/50">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Notifications</h3>
+                </div>
                 
-                {/* 🛑 THIS IS THE NEW SCROLLABLE WRAPPER 🛑 */}
-                <div className="max-h-80 overflow-y-auto overscroll-contain">
+                {/* 🛑 START OF SCROLLABLE WRAPPER 🛑 */}
+                <div className="max-h-64 overflow-y-auto custom-scrollbar">
                   {notifications?.length > 0 ? (
-                    notifications.map(notif => (
+                    notifications.map((notif, index) => (
                       <div 
-                        key={notif.id}
+                        key={index}
                         onClick={() => {
                           setShowDropdown(false);
                           onNotificationClick(notif);
@@ -67,7 +83,8 @@ export default function Navbar({ view, setView, handleLogout, notifications, onN
           </div>
         ) : (
           <button onClick={handleLogout} className="flex items-center gap-2 text-slate-400 hover:text-red-400 font-bold transition">
-            <LogOut size={18} /> Logout
+            <LogOut size={20} />
+            <span>Logout</span>
           </button>
         )}
       </div>

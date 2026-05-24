@@ -9,14 +9,21 @@ import Dashboard from './components/Dashboard';
 import SecretQuestion from './components/SecretQuestion';
 import { compressAndUploadImage } from './uploadLogic';
 import RevealedItemDetails from './components/RevealedItemDetails';
+// 1. Import the component
+import AdminDashboard from './components/AdminDashboard';
 
 const CATEGORIES = ["Electronics", "IDs/Documents", "Keys", "Wallets/Bags", "Books/Stationary", "Other"];
 
 export default function App() {
-  const [view, setView] = useState(localStorage.getItem('userEmail') ? 'dashboard' : 'landing');  const [reportType, setReportType] = useState('');
+  const [view, setView] = useState(localStorage.getItem('userEmail') ? 'dashboard' : 'landing');
+  const [reportType, setReportType] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
-  const [imageFile, setImageFile] = useState(null); // NEW: Holds the real file for Cloudinary
+  const [imageFile, setImageFile] = useState(null); 
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
+  
+  // NEW: State to track admin status
+  const [isAdmin, setIsAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
+
   const [formData, setFormData] = useState({
     category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: ''
   });
@@ -28,8 +35,7 @@ export default function App() {
     if (userEmail && view !== 'landing' && view !== 'signin' && view !== 'login') {
       const fetchNotifications = async () => {
         try {
-            // Dynamic URL that works on both Render and Localhost
-            const baseUrl = import.meta.env?.VITE_API_URL 
+          const baseUrl = import.meta.env?.VITE_API_URL 
             ? `${import.meta.env.VITE_API_URL}/items` 
             : "http://localhost:8000/items";
           const response = await fetch(`${baseUrl}/notifications/${userEmail}`);
@@ -48,10 +54,17 @@ export default function App() {
     }
   }, [userEmail, view]);
 
+  // 3. Updated Logic to handle Admin Check during login
   const handleAuthSuccess = (email) => {
     if (email) {
       setUserEmail(email);
       localStorage.setItem('userEmail', email);
+
+      // Check if user is an admin
+      const adminEmails = ['admin@eng.pdn.ac.lk']; // Add your admin emails here
+      const checkAdmin = adminEmails.includes(email);
+      setIsAdmin(checkAdmin);
+      localStorage.setItem('isAdmin', checkAdmin);
     }
     setView('dashboard');
   };
@@ -59,9 +72,8 @@ export default function App() {
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file); // NEW: Save the physical file!
+      setImageFile(file); 
       
-      // Keep your teammate's preview logic intact:
       const reader = new FileReader();
       reader.onload = (e) => setSelectedImage(e.target.result);
       reader.readAsDataURL(file);
@@ -74,15 +86,12 @@ export default function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!userEmail) {
         alert("Session expired. Please log in again.");
         setView('landing');
         return;
     }
 
-    // We wait for the image to upload and get the URL BEFORE talking to FastAPI
-    // CHANGE THIS:
     const finalImageUrl = imageFile ? await compressAndUploadImage(imageFile) : formData.image_url;
     const payload = {
       title: formData.title,
@@ -92,7 +101,7 @@ export default function App() {
       item_type: reportType === 'lost' ? 'Lost' : 'Found',
       date: formData.date,
       time: formData.time,
-      image_url: finalImageUrl, // <--- The bridge is complete!
+      image_url: finalImageUrl,
       secret_question: formData.secretQ,
       secret_answer: formData.secretA,
       contact_number: formData.phone,
@@ -100,9 +109,7 @@ export default function App() {
     };
 
     try {
-      // Allows using VITE_API_URL for Render deployment, or localhost for local testing
-      const apiUrl = import.meta.env?.VITE_API_URL ||"http://localhost:8000";;
-      
+      const apiUrl = import.meta.env?.VITE_API_URL || "http://localhost:8000";
       const response = await fetch(`${apiUrl}/items/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,25 +133,24 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('isAdmin');
     setUserEmail('');
+    setIsAdmin(false);
     setNotifications([]); 
     setFormData({ category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: '' });
     setSelectedImage(null); 
-    setImageFile(null);     
+    setImageFile(null);      
     setView('landing');
   };
 
   const handleNotificationClick = (notif) => {
-    // Mark as read on backend immediately
     const baseUrl = import.meta.env?.VITE_API_URL
       ? `${import.meta.env.VITE_API_URL}/items`
       : "http://localhost:8000/items";
     fetch(`${baseUrl}/notifications/${notif.id}/read`, { method: "PATCH" })
       .catch(err => console.error("Failed to mark notification as read:", err));
 
-    // Remove from local state instantly so bell badge count drops right away
     setNotifications(prev => prev.filter(n => n.id !== notif.id));
-
     setSelectedNotification(notif);
     setView('secret_question');
   };
@@ -161,6 +167,7 @@ export default function App() {
         handleLogout={handleLogout} 
         notifications={notifications}
         onNotificationClick={handleNotificationClick}
+        currentUser={{ email: userEmail, isAdmin: isAdmin }} // Pass admin status to Navbar
       />
 
       {view === 'landing' && (
@@ -188,11 +195,13 @@ export default function App() {
         />
       )}
 
+      {/* 2. Admin View Rendering */}
+      {view === 'admin' && <AdminDashboard />}
+
       {view === 'secret_question' && selectedNotification && (
         <SecretQuestion 
           item={selectedNotification.item} 
           onSuccess={(decryptedPhone) => {
-            // Swap the encrypted number with the decrypted one!
             setSelectedNotification({
               ...selectedNotification,
               item: {
