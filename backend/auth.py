@@ -20,7 +20,19 @@ def send_otp_endpoint(
     background_tasks: BackgroundTasks, 
     db: Session = Depends(get_db) # <--- Opens DB Connection
 ):
-      
+      # --- DOMAIN RESTRICTION WHITELIST ---
+    allowed_domains = ["@eng.pdn.ac.lk"]
+    allowed_emails = ["lilly.manu94@gmail.com"] # Add your personal email here
+
+    is_allowed = any(request.email.endswith(domain) for domain in allowed_domains) or request.email in allowed_emails
+    
+    if not is_allowed:
+        raise HTTPException(
+            status_code=403, 
+            detail="Access restricted: Please use your university email."
+        )
+    # ------------------------------------
+
     # 1. Generate Code
     otp = generate_otp()
     

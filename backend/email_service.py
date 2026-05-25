@@ -5,7 +5,7 @@ from sib_api_v3_sdk.rest import ApiException
 def send_match_notification_email(receiver_email: str, item_name: str, match_link: str):
     # 1. Grab the API key that we know works (from your .env)
     api_key = os.getenv("BREVO_API_KEY")
-    sender_email = "finditsystem4@gmail.com" # Matching what you have in utils.py
+    sender_email = os.getenv("SENDER_EMAIL", "finditsystem4@gmail.com") # Matching what you have in utils.py
 
     if not api_key:
         print("❌ ERROR: BREVO_API_KEY not found in environment variables.")

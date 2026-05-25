@@ -10,8 +10,8 @@ load_dotenv()
 # 1. Get your API Key from Brevo: SMTP & API -> API Keys
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 
-# 2. This MUST be a verified sender in your Brevo dashboard (Senders & IP -> Senders)
-SENDER_EMAIL = "finditsystem4@gmail.com" 
+# 2. This can be loaded dynamically from the environment, defaulting to the verified sender
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "finditsystem4@gmail.com")
 SENDER_NAME = "FindIT"
 
 def send_email(recipient_email:str, content: str, subject: str = "Your FindIT Update"):

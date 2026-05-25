@@ -76,11 +76,12 @@ def generate_smart_keywords(title: str, description: str, category: str) -> str:
         Category: {category}
         """
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt
         )
         return response.text.strip().lower()
     except Exception as e:
         print(f"Keyword Gen Failed: {e}")
-        # Fallback to the raw text if AI is busy
-        return f"{title} {description} {category}".lower()
+        # Ensure we return a clean string even if AI fails
+        # Join words to avoid messy raw text
+        return f"{title} {category}".replace(" ", ", ").lower()

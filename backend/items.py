@@ -166,23 +166,12 @@ def verify_claim(claim: schemas.ClaimRequest,background_tasks: BackgroundTasks, 
         db.commit()
 
         if alert.failed_attempts == 2:
-            # Replace with your actual admin email
-            admin_email = "e23382@eng.pdn.ac.lk" 
-            subject = "🚨 Security Alert: Item Lockout"
-            content = f"User {claim.user_email} has been locked out after failing to guess the secret answer for item #{claim.item_id}. Please check the Admin Dashboard."
-            
-            # Queue the email to send in the background
-            background_tasks.add_task(send_email, admin_email, content, subject)
+        # HARDCODE your email here to test if it's an ENV variable issue
+            send_email("lilly.manu94@gmail.com", f"User {claim.user_email} locked out on item #{claim.item_id}", "🚨 Security Alert")
+            raise HTTPException(status_code=403, detail="Account locked. Admin notified.")
 
-            raise HTTPException(status_code=403, detail="Maximum attempts reached. Account locked for this item. An admin has been notified.")
-            
-        elif alert.failed_attempts > 2:
-            raise HTTPException(status_code=403, detail="Maximum attempts reached. Account locked for this item. An admin has been notified.")
-
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail=f"Security answer is incorrect. You have {2 - alert.failed_attempts} attempt(s) left."
-        )
+        raise HTTPException(status_code=403, detail=f"Incorrect. {2 - alert.failed_attempts} attempts left.")
+    
 
 @router.get("/notifications/{email}")
 def get_notifications(email: str, db: Session = Depends(database.get_db)):

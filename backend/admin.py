@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-import models, schemas
+import database, models, schemas
 from database import get_db
 from utils import send_email
+from security import decrypt_phone
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -25,16 +26,22 @@ def delete_report(item_id: int, db: Session = Depends(get_db)):
 @router.get("/alerts")
 def get_active_alerts(db: Session = Depends(get_db)):
     """Fetch all locked items requiring admin review."""
-    return db.query(models.AdminAlert).filter(models.AdminAlert.is_resolved == False).all()
+    alerts = db.query(models.AdminAlert).filter(models.AdminAlert.is_resolved == False).all()
+    
+    results = []
+    for alert in alerts:
+        item = db.query(models.Item).filter(models.Item.id == alert.found_item_id).first()
+        results.append({
+            "alert_id": alert.id,
+            "found_item_id": alert.found_item_id,
+            "claimer_email": alert.claimer_email,
+            "failed_attempts": alert.failed_attempts,
+            "item_title": item.title if item else "Unknown"
+        })
+    return results
 
 @router.post("/force-match")
-def force_approve_match(request: schemas.ForceMatchRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    """Admin overrides the security question and connects the users."""
-    
-    found_item = db.query(models.Item).filter(models.Item.id == request.found_item_id).first()
-    if not found_item:
-        raise HTTPException(status_code=404, detail="Item not found")
-
+def force_match(request: schemas.ForceMatchRequest, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
     # 1. Resolve the alert
     alert = db.query(models.AdminAlert).filter(
         models.AdminAlert.found_item_id == request.found_item_id,
@@ -43,24 +50,25 @@ def force_approve_match(request: schemas.ForceMatchRequest, background_tasks: Ba
     
     if alert:
         alert.is_resolved = True
+        db.commit()
 
-    # 2. Create the success notification for the claimer (containing the phone number)
-    new_message = f"ADMIN OVERRIDE: Your claim for '{found_item.title}' was approved! Contact the founder at {found_item.contact_number}."
+    # 2. Fetch the item to get the phone number
+    found_item = db.query(models.Item).filter(models.Item.id == request.found_item_id).first()
+    decrypted_number = decrypt_phone(found_item.contact_number)
+
+    # 3. Send Notification to User
+    message = f"Admin Override: Your claim for '{found_item.title}' was approved. Contact: {decrypted_number}"
     
-    notification = models.Notification(
+    # Create a notification object so it appears in their bell icon
+    new_notif = models.Notification(
         user_email=request.claimer_email,
-        matched_item_id=found_item.id,
-        message=new_message,
-        is_read=False
+        message=message,
+        matched_item_id=found_item.id
     )
-    db.add(notification)
-
-    # 3. Queue the Email Notification
-    # Note: This requires your send_email function in utils.py to handle body text
-    email_body = f"Admin has approved your claim for '{found_item.title}'. You can now view the founder's contact details in the app."
-    background_tasks.add_task(send_email, request.claimer_email, email_body)
-
-    # 4. Final Commit
+    db.add(new_notif)
     db.commit()
 
-    return {"message": "Match successfully forced. Users notified via App and Email."}
+    # 4. Trigger Email
+    background_tasks.add_task(send_email, request.claimer_email, message, "Claim Approved by Admin")
+    
+    return {"status": "success", "message": "Override applied and user notified."}
