@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, MapPin, Calendar, Clock, Tag, Trash2} from 'lucide-react';
+import { getApiUrl } from '../config';
 
 const LostItemDetails = ({ item, onClose, currentUserEmail }) => {
   if (!item) return null;
@@ -21,7 +22,7 @@ const LostItemDetails = ({ item, onClose, currentUserEmail }) => {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/items/${item.id}`, {
+      const response = await fetch(`${getApiUrl()}/items/${item.id}`, {
         method: 'DELETE',
       });
 

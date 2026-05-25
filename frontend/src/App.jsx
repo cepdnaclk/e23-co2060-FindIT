@@ -11,8 +11,10 @@ import { compressAndUploadImage } from './uploadLogic';
 import RevealedItemDetails from './components/RevealedItemDetails';
 // 1. Import the component
 import AdminDashboard from './components/AdminDashboard';
+import { getApiUrl } from './config';
 
 const CATEGORIES = ["Electronics", "IDs/Documents", "Keys", "Wallets/Bags", "Books/Stationary", "Other"];
+const ADMIN_EMAILS = ['lilly.manu94@gmail.com'];
 
 export default function App() {
   const [view, setView] = useState(localStorage.getItem('userEmail') ? 'dashboard' : 'landing');
@@ -21,8 +23,11 @@ export default function App() {
   const [imageFile, setImageFile] = useState(null); 
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   
-  // NEW: State to track admin status
-  const [isAdmin, setIsAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
+  // NEW: State to track admin status (dynamically computed on mount as well to prevent lockout on deployed site)
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const email = localStorage.getItem('userEmail') || '';
+    return localStorage.getItem('isAdmin') === 'true' || ADMIN_EMAILS.includes(email);
+  });
 
   const [formData, setFormData] = useState({
     category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: ''
@@ -35,9 +40,7 @@ export default function App() {
     if (userEmail && view !== 'landing' && view !== 'signin' && view !== 'login') {
       const fetchNotifications = async () => {
         try {
-          const baseUrl = import.meta.env?.VITE_API_URL 
-            ? `${import.meta.env.VITE_API_URL}/items` 
-            : "http://localhost:8000/items";
+          const baseUrl = `${getApiUrl()}/items`;
           const response = await fetch(`${baseUrl}/notifications/${userEmail}`);
           if (response.ok) {
             const data = await response.json();
@@ -61,8 +64,7 @@ export default function App() {
       localStorage.setItem('userEmail', email);
 
       // Check if user is an admin
-      const adminEmails = ['admin@eng.pdn.ac.lk']; // Add your admin emails here
-      const checkAdmin = adminEmails.includes(email);
+      const checkAdmin = ADMIN_EMAILS.includes(email);
       setIsAdmin(checkAdmin);
       localStorage.setItem('isAdmin', checkAdmin);
     }
@@ -109,7 +111,7 @@ export default function App() {
     };
 
     try {
-      const apiUrl = import.meta.env?.VITE_API_URL || "http://localhost:8000";
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/items/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,13 +146,6 @@ export default function App() {
   };
 
   const handleNotificationClick = (notif) => {
-    const baseUrl = import.meta.env?.VITE_API_URL
-      ? `${import.meta.env.VITE_API_URL}/items`
-      : "http://localhost:8000/items";
-    fetch(`${baseUrl}/notifications/${notif.id}/read`, { method: "PATCH" })
-      .catch(err => console.error("Failed to mark notification as read:", err));
-
-    setNotifications(prev => prev.filter(n => n.id !== notif.id));
     setSelectedNotification(notif);
     setView('secret_question');
   };
@@ -201,7 +196,16 @@ export default function App() {
       {view === 'secret_question' && selectedNotification && (
         <SecretQuestion 
           item={selectedNotification.item} 
+          userEmail={userEmail}
           onSuccess={(decryptedPhone) => {
+            // Mark the notification as read in the backend upon successful verification
+            const baseUrl = `${getApiUrl()}/items`;
+            fetch(`${baseUrl}/notifications/${selectedNotification.id}/read`, { method: "PATCH" })
+              .catch(err => console.error("Failed to mark notification as read:", err));
+
+            // Remove it from the local notifications list now that it is verified and read
+            setNotifications(prev => prev.filter(n => n.id !== selectedNotification.id));
+
             setSelectedNotification({
               ...selectedNotification,
               item: {

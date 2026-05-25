@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Tag, MapPin, Loader2, Calendar, Clock } from 'lucide-react';
 import LostItemDetails from './LostItemDetails';
+import { getApiUrl } from '../config';
 
 export default function Dashboard({ onViewMatches, onCreateReport, currentUser, showMatches = false, matchedPairs = [] }) {
   const [items, setItems] = useState([]);
@@ -16,9 +17,7 @@ export default function Dashboard({ onViewMatches, onCreateReport, currentUser, 
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL 
-       ? `${import.meta.env.VITE_API_URL}/items/` 
-       : "http://localhost:8000/items/";
+        const apiUrl = `${getApiUrl()}/items/`;
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error("Server error");
         const data = await response.json();

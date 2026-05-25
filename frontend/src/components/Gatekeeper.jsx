@@ -15,9 +15,12 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
     setLoading(true);
 
     try {
-      if (!formData.email.endsWith("@eng.pdn.ac.lk")) {
-        throw new Error("Only @eng.pdn.ac.lk emails are permitted.");
-      }
+      const allowedEmails = ["lilly.manu94@gmail.com"];
+      const isAllowed = formData.email.endsWith("@eng.pdn.ac.lk") || allowedEmails.includes(formData.email);
+
+      if (!isAllowed) {
+      throw new Error("Access restricted: Please use your university email.");
+  }
 
       const apiUrl = import.meta.env.VITE_API_URL;
       
@@ -53,6 +56,20 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
       setLoading(false);
     }
   };
+
+  // Locate this logic in your Gatekeeper.jsx or login flow
+const handleLogin = (userEmail) => {
+    // Add your personal email to this whitelist
+    const whitelist = ["e23382@eng.pdn.ac.lk", "lilly.manu94@gmail.com"];
+    
+    if (userEmail.endsWith("@eng.pdn.ac.lk") || whitelist.includes(userEmail)) {
+        // Proceed with login
+        setAccessGranted(true);
+    } else {
+        // Show restriction message
+        alert("Access restricted: Please use your university email.");
+    }
+};
 
   // 2. Verify the OTP the user entered
   const handleVerifyOtp = async (e) => {

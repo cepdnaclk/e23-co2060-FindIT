@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Camera, X, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { compressAndUploadImage } from '../uploadLogic'; // Ensure path is correct
+import { getApiUrl } from '../config';
 
 export default function ReportForm({ 
   reportType, setView, selectedImage, setSelectedImage, 
@@ -37,7 +38,7 @@ export default function ReportForm({
     const file = e.target.files[0];
     if (!file) return;
 
-    // 1. Show preview locally[cite: 2]
+    // 1. Show preview locally
     const reader = new FileReader();
     reader.onload = (e) => setSelectedImage(e.target.result);
     reader.readAsDataURL(file);
@@ -50,7 +51,7 @@ export default function ReportForm({
       const uploadedUrl = await compressAndUploadImage(file);
       
       // 3. Call Backend for Gemini Analysis
-      const apiUrl = import.meta.env?.VITE_API_URL ||"http://localhost:8000";;
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/items/analyze-found-item`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,6 +72,7 @@ export default function ReportForm({
         });
       } else {
         throw new Error("AI analysis failed. Please fill the form manually.");
+        setImageFile(file);
       }
     } catch (err) {
       setScanError(err.message);

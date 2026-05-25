@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
 import { Lock, ArrowLeft } from 'lucide-react';
+import { getApiUrl } from '../config';
 
-export default function SecretQuestion({ item, onSuccess, onBack }) {
+export default function SecretQuestion({ item, userEmail, onSuccess, onBack }) {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (!item) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-6">
+        <div className="max-w-md w-full bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-700 text-center">
+          <p className="text-rose-400 font-bold text-lg mb-4">Error: Item details not found.</p>
+          <button onClick={onBack} className="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl transition font-bold text-white shadow-lg">
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,14 +27,15 @@ export default function SecretQuestion({ item, onSuccess, onBack }) {
 
     try {
       // Send the guess to the FastAPI backend
-      const apiUrl = import.meta.env?.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/items/verify-claim` : "http://localhost:8000/items/verify-claim";
+      const apiUrl = `${getApiUrl()}/items/verify-claim`;
       
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           item_id: item.id,
-          user_answer: answer
+          user_answer: answer,
+          user_email: userEmail
         })
       });
 
@@ -30,7 +45,15 @@ export default function SecretQuestion({ item, onSuccess, onBack }) {
         onSuccess(data.phone_number);
       } else {
         const errData = await response.json();
-        setError(errData.detail || "Incorrect answer. Please try again.");
+        
+        // 3. SAFETY CHECK: If FastAPI sends an array (422 error), handle it gracefully
+        if (Array.isArray(errData.detail)) {
+            setError("Validation error: Please ensure all fields are sent.");
+        } else {
+            // Otherwise, it's a normal string error (like your 403 Lockout error)
+            setError(errData.detail || "Incorrect answer. Please try again.");
+        }
+        
       }
     } catch (err) {
       setError("Failed to connect to the server.");
