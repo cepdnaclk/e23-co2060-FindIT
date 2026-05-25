@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database, models, schemas
 from matching import find_matches
+from utils import send_email
 from fastapi import status 
 from security import decrypt_phone, encrypt_phone
 from vision_service import analyze_item_image, generate_smart_keywords
@@ -67,7 +68,7 @@ def create_item(
         db_session=db
     )
     # This will use your local URL while testing, but gracefully fall back to the live URL in production!
-    frontend_url = os.getenv("FRONTEND_URL", "https://findit-pdn.vercel.app")
+    frontend_url = os.getenv("FRONTEND_URL", "https://findit-frontend-e350.onrender.com")
     
     
     for match in match_results:
@@ -128,7 +129,7 @@ def create_item(
     }
 
 @router.post("/verify-claim")
-def verify_claim(claim: schemas.ClaimRequest, db: Session = Depends(database.get_db)):
+def verify_claim(claim: schemas.ClaimRequest,background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
     # 1. Fetch the item
     db_item = db.query(models.Item).filter(models.Item.id == claim.item_id).first()
     if not db_item:
@@ -164,16 +165,24 @@ def verify_claim(claim: schemas.ClaimRequest, db: Session = Depends(database.get
         
         db.commit()
 
-        # Check if this failure just locked them out
-        if alert.failed_attempts >= 2:
+        if alert.failed_attempts == 2:
+            # Replace with your actual admin email
+            admin_email = "e23382@eng.pdn.ac.lk" 
+            subject = "🚨 Security Alert: Item Lockout"
+            content = f"User {claim.user_email} has been locked out after failing to guess the secret answer for item #{claim.item_id}. Please check the Admin Dashboard."
+            
+            # Queue the email to send in the background
+            background_tasks.add_task(send_email, admin_email, content, subject)
+
+            raise HTTPException(status_code=403, detail="Maximum attempts reached. Account locked for this item. An admin has been notified.")
+            
+        elif alert.failed_attempts > 2:
             raise HTTPException(status_code=403, detail="Maximum attempts reached. Account locked for this item. An admin has been notified.")
 
-        # Otherwise, tell them they failed but have tries left
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail=f"Security answer is incorrect. You have {2 - alert.failed_attempts} attempt(s) left."
         )
-
 
 @router.get("/notifications/{email}")
 def get_notifications(email: str, db: Session = Depends(database.get_db)):
