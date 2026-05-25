@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, ShieldCheck, Package, AlertCircle, CheckCircle2, Search } from 'lucide-react';
+import { Trash2, ShieldCheck, Package, AlertCircle, CheckCircle2, Search, X } from 'lucide-react'; // Added X
 import { getApiUrl } from '../config';
 
 export default function AdminDashboard() {
@@ -7,6 +7,7 @@ export default function AdminDashboard() {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewingAlert, setViewingAlert] = useState(null); 
 
   const apiUrl = `${getApiUrl()}/items/`;
 
@@ -35,20 +36,21 @@ export default function AdminDashboard() {
   };
 
   const handleOverride = async (alert) => {
-    if (!window.confirm(`Force approve claim for ID #${alert.found_item_id}?`)) return;
+    if (!window.confirm(`Force approve claim for ID #${alert.found_item.id}?`)) return;
 
     try {
       const response = await fetch(`${getApiUrl()}/admin/force-match`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          found_item_id: alert.found_item_id,
+          found_item_id: alert.found_item.id,
           claimer_email: alert.claimer_email
         })
       });
 
       if (response.ok) {
         alert("Override successful!");
+        setViewingAlert(null); // Close modal
         fetchData(); // Refresh both lists
       } else {
         const err = await response.json();
@@ -101,8 +103,14 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             {alerts.map(a => (
               <div key={a.alert_id} className="bg-slate-900 p-4 rounded-xl flex justify-between items-center">
-                <span>{a.item_title} - {a.claimer_email}</span>
-                <button onClick={() => handleOverride(a)} className="bg-rose-600 px-4 py-2 rounded-lg font-bold hover:bg-rose-500">Override</button>
+                <span><strong>{a.found_item?.title || "Item"}</strong> - {a.claimer_email}</span>
+                {/* CHANGED: Review Reports button opens modal */}
+                <button 
+                  onClick={() => setViewingAlert(a)} 
+                  className="bg-indigo-600 px-4 py-2 rounded-lg font-bold hover:bg-indigo-500"
+                >
+                  Review Reports
+                </button>
               </div>
             ))}
           </div>
@@ -132,6 +140,47 @@ export default function AdminDashboard() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* --- ADD THIS MODAL AT THE BOTTOM --- */}
+      {viewingAlert && (
+        <div className="fixed inset-0 bg-slate-950/90 z-50 p-6 overflow-y-auto">
+          <div className="max-w-6xl mx-auto">
+            <button onClick={() => setViewingAlert(null)} className="mb-6 p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition">
+              <X size={32} />
+            </button>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <FullItemView item={viewingAlert.lost_item} title="Lost Item Report" />
+              <FullItemView item={viewingAlert.found_item} title="Found Item Report" />
+            </div>
+            
+            <button 
+              onClick={() => handleOverride(viewingAlert)} 
+              className="mt-8 w-full py-4 bg-emerald-600 rounded-xl font-black text-xl hover:bg-emerald-500 transition"
+            >
+              Approve Claim & Override
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- ADD THIS HELPER COMPONENT AT THE BOTTOM ---
+function FullItemView({ item, title }) {
+  if (!item) return <div className="text-slate-500 p-10 text-center border border-slate-700 rounded-3xl">Report missing</div>;
+  return (
+    <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700">
+      <h3 className="text-indigo-400 font-black uppercase tracking-widest mb-4">{title}</h3>
+      {item.image_url && <img src={item.image_url} className="w-full h-64 object-cover rounded-2xl mb-6" />}
+      <h2 className="text-2xl font-bold text-white">{item.title}</h2>
+      <p className="text-slate-400 mt-2 mb-6">{item.description}</p>
+      <div className="space-y-2 text-sm text-slate-300">
+        <p><strong>Category:</strong> {item.category}</p>
+        <p><strong>Location:</strong> {item.location}</p>
+        <p><strong>Date/Time:</strong> {item.date} {item.time}</p>
       </div>
     </div>
   );

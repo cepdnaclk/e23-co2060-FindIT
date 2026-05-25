@@ -52,6 +52,7 @@ class AdminAlert(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     found_item_id = Column(Integer, ForeignKey("items.id", ondelete="CASCADE"))
+    lost_item_id = Column(Integer, ForeignKey("items.id", ondelete="CASCADE"))
     claimer_email = Column(String(255), index=True)
     failed_attempts = Column(Integer, default=0)
     is_resolved = Column(Boolean, default=False)

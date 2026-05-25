@@ -9,7 +9,6 @@ import Dashboard from './components/Dashboard';
 import SecretQuestion from './components/SecretQuestion';
 import { compressAndUploadImage } from './uploadLogic';
 import RevealedItemDetails from './components/RevealedItemDetails';
-// 1. Import the component
 import AdminDashboard from './components/AdminDashboard';
 import { getApiUrl } from './config';
 
@@ -147,8 +146,14 @@ export default function App() {
 
   const handleNotificationClick = (notif) => {
     setSelectedNotification(notif);
-    setView('secret_question');
-  };
+    // If it's an admin override, skip the secret question screen
+    if (notif.message && notif.message.includes("Admin Override")) {
+        setView('revealed_item');
+    } else {
+        // Standard flow: go to verification
+        setView('secret_question');
+    }
+  }; 
 
   if (view === 'signin' || view === 'login') {
     return <Gatekeeper type={view} onBack={() => setView('landing')} onSuccess={handleAuthSuccess} />;

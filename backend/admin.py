@@ -30,13 +30,15 @@ def get_active_alerts(db: Session = Depends(get_db)):
     
     results = []
     for alert in alerts:
-        item = db.query(models.Item).filter(models.Item.id == alert.found_item_id).first()
+        # Fetch both full item objects
+        found_item = db.query(models.Item).filter(models.Item.id == alert.found_item_id).first()
+        lost_item = db.query(models.Item).filter(models.Item.id == alert.lost_item_id).first()
+        
         results.append({
             "alert_id": alert.id,
-            "found_item_id": alert.found_item_id,
-            "claimer_email": alert.claimer_email,
-            "failed_attempts": alert.failed_attempts,
-            "item_title": item.title if item else "Unknown"
+            "found_item": found_item,
+            "lost_item": lost_item,
+            "claimer_email": alert.claimer_email
         })
     return results
 
