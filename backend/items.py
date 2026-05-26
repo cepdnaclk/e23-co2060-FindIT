@@ -90,7 +90,8 @@ def create_item(
                     send_match_notification_email,
                     receiver_email=item.owner_email,
                     item_name=item.title,
-                    match_link=f"{frontend_url}/dashboard/matches/{matched_db_item.id}"
+                    match_link=frontend_url # <-- Just the base URL!
+
                 )
                 
             # --- NOTIFY ORIGINAL ITEM OWNER ---
@@ -108,7 +109,7 @@ def create_item(
                     send_match_notification_email,
                     receiver_email=matched_db_item.owner_email,
                     item_name=matched_db_item.title,
-                    match_link=f"{frontend_url}/dashboard/matches/{new_item.id}"
+                    match_link=frontend_url # <-- Just the base URL!
                 )
             
             db.commit()

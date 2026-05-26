@@ -22,13 +22,12 @@ def send_match_notification_email(receiver_email: str, item_name: str, match_lin
       <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
         <h2 style="color: #4F46E5;">Great news from FindIT!</h2>
         <p>We think we might have found a match for your reported item: <strong>{item_name}</strong>.</p>
-        <p>Please log in to the platform to review the match and verify ownership securely.</p>
+        <p>Please log in to the platform and <strong>click the Notification Bell</strong> in the top right to review the match and verify ownership securely.</p>
         <br>
         <a href="{match_link}" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-          View Match Details
+          Open FindIT Dashboard
         </a>
         <br><br>
-        <p style="font-size: 12px; color: #777;">If the button doesn't work, copy and paste this link into your browser: {match_link}</p>
         <p style="font-size: 12px; color: #777;">Stay secure. FindIT will never ask for your password via email.</p>
       </body>
     </html>
