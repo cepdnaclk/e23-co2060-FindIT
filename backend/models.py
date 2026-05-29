@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, T
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
+from datetime import datetime, timedelta
 
 # --- 1. User Model ---
 class User(Base):
@@ -34,6 +35,10 @@ class Item(Base):
     owner_email = Column(String(255), ForeignKey("users.email"))
     search_keywords = Column(Text, nullable=True)
     reporter = relationship("User", back_populates="items")
+    # NEW: 7-Day cleanup columns
+    # CHANGE THIS LINE:
+    expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=7))
+    warning_sent = Column(Boolean, default=False)
 
 class Notification(Base):
     __tablename__ = "notifications"

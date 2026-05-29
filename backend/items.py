@@ -9,6 +9,8 @@ from security import decrypt_phone, encrypt_phone
 from vision_service import analyze_item_image, generate_smart_keywords
 from fastapi import APIRouter, BackgroundTasks
 from email_service import send_match_notification_email # Import your new function
+from fastapi.responses import RedirectResponse
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/items", tags=["Items"])
 
@@ -68,8 +70,8 @@ def create_item(
         db_session=db
     )
     # This will use your local URL while testing, but gracefully fall back to the live URL in production!
-    frontend_url = os.getenv("FRONTEND_URL", "https://findit-frontend-e350.onrender.com")
-    
+    # CHANGE THIS LINE:
+    frontend_url = os.getenv("FRONTEND_URL", "https://findit-frontend-e350.onrender.com")    
     
     for match in match_results:
         matched_db_item = db.query(models.Item).filter(models.Item.id == match["id"]).first()
@@ -237,3 +239,20 @@ def delete_item(item_id: int, db: Session = Depends(database.get_db)):
     
     return {"message": "Item deleted successfully!"}
 
+@router.get("/extend/{item_id}")
+def extend_item_retention(item_id: int, db: Session = Depends(database.get_db)):
+    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    
+    frontend_url = os.getenv("FRONTEND_URL", "https://findit-frontend-e350.onrender.com")
+
+    if not db_item:
+        # If they click the link after it was already deleted
+        return RedirectResponse(url=f"{frontend_url}?message=expired")
+
+    # Add 7 days from right now, and reset the warning flag!
+    db_item.expires_at = datetime.utcnow() + timedelta(days=7)
+    db_item.warning_sent = False
+    db.commit()
+
+    # Redirect them straight to the frontend dashboard
+    return RedirectResponse(url=f"{frontend_url}?message=extended")
