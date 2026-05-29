@@ -22,7 +22,7 @@ export default function App() {
   const [imageFile, setImageFile] = useState(null); 
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   
-  // NEW: State to track admin status (dynamically computed on mount as well to prevent lockout on deployed site)
+  // State to track admin status (dynamically computed on mount as well to prevent lockout on deployed site)
   const [isAdmin, setIsAdmin] = useState(() => {
     const email = localStorage.getItem('userEmail') || '';
     return localStorage.getItem('isAdmin') === 'true' || ADMIN_EMAILS.includes(email);
@@ -34,6 +34,19 @@ export default function App() {
 
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
+
+  // NEW: Check for URL messages from email redirects for the 7-day extension
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('message') === 'extended') {
+      setView('extended_success');
+      // Clean up the URL so it looks nice and clean again
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.get('message') === 'expired') {
+      setView('expired_error');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     if (userEmail && view !== 'landing' && view !== 'signin' && view !== 'login') {
@@ -56,7 +69,7 @@ export default function App() {
     }
   }, [userEmail, view]);
 
-  // 3. Updated Logic to handle Admin Check during login
+  // Updated Logic to handle Admin Check during login
   const handleAuthSuccess = (email) => {
     if (email) {
       setUserEmail(email);
@@ -167,7 +180,7 @@ export default function App() {
         handleLogout={handleLogout} 
         notifications={notifications}
         onNotificationClick={handleNotificationClick}
-        currentUser={{ email: userEmail, isAdmin: isAdmin }} // Pass admin status to Navbar
+        currentUser={{ email: userEmail, isAdmin: isAdmin }}
       />
 
       {view === 'landing' && (
@@ -195,7 +208,6 @@ export default function App() {
         />
       )}
 
-      {/* 2. Admin View Rendering */}
       {view === 'admin' && <AdminDashboard />}
 
       {view === 'secret_question' && selectedNotification && (
@@ -203,12 +215,10 @@ export default function App() {
           item={selectedNotification.item} 
           userEmail={userEmail}
           onSuccess={(decryptedPhone) => {
-            // Mark the notification as read in the backend upon successful verification
             const baseUrl = `${getApiUrl()}/items`;
             fetch(`${baseUrl}/notifications/${selectedNotification.id}/read`, { method: "PATCH" })
               .catch(err => console.error("Failed to mark notification as read:", err));
 
-            // Remove it from the local notifications list now that it is verified and read
             setNotifications(prev => prev.filter(n => n.id !== selectedNotification.id));
 
             setSelectedNotification({
@@ -232,6 +242,48 @@ export default function App() {
             setView('dashboard');
           }}
         />
+      )}
+
+      {/* NEW: SUCCESS SCREEN */}
+      {view === 'extended_success' && (
+        <div className="flex flex-col items-center justify-center min-h-[75vh] px-4 text-center">
+          <div className="bg-slate-800 p-8 md:p-10 rounded-3xl max-w-md w-full border border-indigo-500/30 shadow-2xl shadow-indigo-500/10">
+            <div className="w-20 h-20 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h2 className="text-3xl font-black text-white mb-3">Report Extended!</h2>
+            <p className="text-slate-300 mb-8 leading-relaxed">
+              We've successfully updated your report. It will remain active in our system for another 7 days while we keep searching for a match.
+            </p>
+            <button 
+              onClick={() => setView('dashboard')} 
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: EXPIRED/ERROR SCREEN */}
+      {view === 'expired_error' && (
+        <div className="flex flex-col items-center justify-center min-h-[75vh] px-4 text-center">
+          <div className="bg-slate-800 p-8 md:p-10 rounded-3xl max-w-md w-full border border-rose-500/30 shadow-2xl shadow-rose-500/10">
+            <div className="w-20 h-20 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </div>
+            <h2 className="text-3xl font-black text-white mb-3">Link Expired</h2>
+            <p className="text-slate-300 mb-8 leading-relaxed">
+              It looks like this report was already deleted from our system. If you haven't found your item yet, please submit a new report.
+            </p>
+            <button 
+              onClick={() => setView('dashboard')} 
+              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-xl transition-colors"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
