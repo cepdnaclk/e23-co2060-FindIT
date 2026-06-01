@@ -1,11 +1,32 @@
 import os
 import json
 import requests
+import models
 from google import genai
 from google.genai import types
 
+# Define prioritized models
+VISION_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"]
+TEXT_MODELS = [ "gemini-2.5-flash", "gemini-2.0-flash"]
+
 # Initialize the client (automatically uses GEMINI_API_KEY from your .env)
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+def get_or_create_analysis(image_url: str, db):
+    # 1. CHECK CACHE FIRST
+    cached = db.query(models.AnalysisCache).filter(models.AnalysisCache.input_key == image_url).first()
+    if cached:
+        return cached.result_json
+
+    # 2. IF NOT CACHED, CALL AI
+    result = analyze_item_image(image_url)
+    
+    # 3. SAVE TO CACHE
+    if result.get("title") and result.get("title") != "":
+        new_cache = models.AnalysisCache(input_key=image_url, result_json=result)
+        db.add(new_cache)
+        db.commit()
+    return result
 
 def analyze_item_image(image_url: str):
     """
@@ -28,42 +49,45 @@ def analyze_item_image(image_url: str):
         "secret_answer": (The short answer to that secret question).
         """
 
-        # 3. Generate Content using the working 2.5 model
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                prompt,
-                types.Part.from_bytes(
-                    data=img_response.content, 
-                    mime_type="image/jpeg" 
+        # Rotate through models
+        for model in VISION_MODELS:
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=[prompt, types.Part.from_bytes(data=img_response.content, mime_type="image/jpeg")],
+                    config=types.GenerateContentConfig(response_mime_type="application/json"),
                 )
-            ],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json", # Forces the AI to output valid JSON
-            ),
-        )
-
-        # 4. Parse the JSON string into a Python dictionary for FastAPI to use
-        return json.loads(response.text)
+                return json.loads(response.text)
+            except Exception as e:
+                # If rate limited (429), try next model. If other error, log and try next.
+                print(f"Model {model} failed: {e}")
+                continue 
 
     except Exception as e:
         print(f"DEBUG BACKEND ERROR: {e}")
-        # 5. Graceful Fallback: If anything fails, return empty fields so the frontend form still works
-        return {
-            "title": "",
-            "category": "Other",
-            "description": "AI analysis unavailable. Please fill manually.",
-            "secret_question": "",
-            "secret_answer": ""
-        }
+
+    # Fallback if all models fail
+    return {
+        "title": "",
+        "category": "Other",
+        "description": "AI analysis unavailable.",
+        "secret_question": "",
+        "secret_answer": ""
+    }
 
 # Add this at the bottom of vision_service.py
-def generate_smart_keywords(title: str, description: str, category: str) -> str:
+def generate_smart_keywords(title: str, description: str, category: str,db) -> str:
     """
     Uses Gemini to translate Singlish and expand abbreviations into a clean keyword list.
     """
-    try:
-        prompt = f"""
+    cache_key = f"{title}-{category}"
+    
+    # 1. CHECK CACHE
+    cached = db.query(models.AnalysisCache).filter(models.AnalysisCache.input_key == cache_key).first()
+    if cached: 
+        return cached.result_json
+    
+    prompt = f"""
         Extract standard English keywords from this lost/found item report.
         - Translate any Sri Lankan/Singlish words (e.g., 'kudaya' -> 'umbrella', 'potha' -> 'book').
         - Expand abbreviations (e.g., 'Uni ID' -> 'University Identity Card').
@@ -76,14 +100,18 @@ def generate_smart_keywords(title: str, description: str, category: str) -> str:
         Category: {category}
         """
         
-        # UPDATED: Swapped to 2.5-flash to match the working setup above!
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-        return response.text.strip().lower()
-    except Exception as e:
-        print(f"Keyword Gen Failed: {e}")
-        # Ensure we return a clean string even if AI fails
-        # Join words to avoid messy raw text
-        return f"{title} {category}".replace(" ", ", ").lower()
+    for model in TEXT_MODELS:
+        try:
+            response = client.models.generate_content(model=model, contents=prompt)
+            result = response.text.strip().lower()
+            
+            # Save to cache
+            db.add(models.AnalysisCache(input_key=cache_key, result_json=result))
+            db.commit()
+            return result
+        except:
+            continue
+
+    #Fallback       
+    return f"{title} {category}".lower()
+  

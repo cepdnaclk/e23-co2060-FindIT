@@ -8,9 +8,10 @@ from fastapi import status
 from security import decrypt_phone, encrypt_phone
 from vision_service import analyze_item_image, generate_smart_keywords
 from fastapi import APIRouter, BackgroundTasks
-from email_service import send_match_notification_email # Import your new function
+from email_service import send_match_notification_email 
 from fastapi.responses import RedirectResponse
 from datetime import datetime, timedelta
+from vision_service import get_or_create_analysis
 
 router = APIRouter(prefix="/items", tags=["Items"])
 
@@ -29,11 +30,31 @@ def create_item(
     background_tasks: BackgroundTasks, 
     db: Session = Depends(database.get_db)
 ):
+    print(f"DEBUG: Checking image_url: {item.image_url}", flush=True)
+    if item.image_url:
+        print("DEBUG: Entering AI Analysis block...", flush=True)
+    
+
+    # --- NEW: AI ANALYSIS AND CACHING LOGIC ---
+    ai_data = {"title": item.title, "category": item.category, "description": item.description}
+    
+    if item.image_url:
+        try:
+            # This calls vision_service, which checks the DB cache first
+            ai_data = get_or_create_analysis(item.image_url, db)
+            
+            # Auto-fill fields if the user left them empty
+            if not item.title: item.title = ai_data.get("title", "Unknown Item")
+            if not item.category: item.category = ai_data.get("category", "Other")
+            if not item.description: item.description = ai_data.get("description", "")
+        except Exception as e:
+            print(f"AI Analysis skipped or failed: {e}")
+
     # Encrypt the contact number before saving to the database
     encrypted_contact = encrypt_phone(item.contact_number)
 
     # Generate the hidden smart tags using Gemini
-    smart_tags = generate_smart_keywords(item.title, item.description, item.category)
+    smart_tags = generate_smart_keywords(item.title, item.description, item.category,db)
 
     print(f"\n🧠 AI GENERATED TAGS FOR {item.title}: {smart_tags}\n")
     
@@ -70,7 +91,6 @@ def create_item(
         db_session=db
     )
     # This will use your local URL while testing, but gracefully fall back to the live URL in production!
-    # CHANGE THIS LINE:
     frontend_url = os.getenv("FRONTEND_URL", "https://findit-frontend-e350.onrender.com")    
     
     for match in match_results:
@@ -187,6 +207,18 @@ def get_notifications(email: str, db: Session = Depends(database.get_db)):
     result = []
     for notif in notifications:
         if notif.matched_item:
+            raw_contact = notif.matched_item.contact_number
+            msg = notif.message.lower() if notif.message else ""
+            
+            print(f"DEBUG: Processing Notif {notif.id}. Msg: {msg}", flush=True)
+            print(f"DEBUG: Raw contact in DB: {raw_contact}", flush=True)
+
+            if "admin override" in msg:
+                display_phone = decrypt_phone(raw_contact)
+                print(f"DEBUG: Result of decryption: {display_phone}", flush=True)
+            else:
+                display_phone = raw_contact
+    
             # Package the data exactly how the React frontend expects it
             result.append({
                 "id": notif.id,
@@ -201,7 +233,7 @@ def get_notifications(email: str, db: Session = Depends(database.get_db)):
                     "category": notif.matched_item.category,
                     "image_url": notif.matched_item.image_url,
                     "owner_email": notif.matched_item.owner_email,
-                    "contact_number": notif.matched_item.contact_number
+                    "contact_number": display_phone
                 }
             })
     return result

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import JSON, Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -62,3 +62,10 @@ class AdminAlert(Base):
     failed_attempts = Column(Integer, default=0)
     is_resolved = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+# Add this to backend/models.py
+class AnalysisCache(Base):
+    __tablename__ = "analysis_cache"
+    id = Column(Integer, primary_key=True, index=True)
+    input_key = Column(String(500), unique=True, index=True) # Stores the image URL or text key
+    result_json = Column(JSON) # Stores the JSON response

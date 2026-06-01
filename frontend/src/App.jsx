@@ -160,7 +160,7 @@ export default function App() {
   const handleNotificationClick = (notif) => {
     setSelectedNotification(notif);
     // If it's an admin override, skip the secret question screen
-    if (notif.message && notif.message.includes("Admin Override")) {
+    if (notif.message && notif.message.toLowerCase().includes("admin override")) {
         setView('revealed_item');
     } else {
         // Standard flow: go to verification

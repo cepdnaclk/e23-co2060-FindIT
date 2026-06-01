@@ -56,10 +56,9 @@ def force_match(request: schemas.ForceMatchRequest, background_tasks: Background
 
     # 2. Fetch the item to get the phone number
     found_item = db.query(models.Item).filter(models.Item.id == request.found_item_id).first()
-    decrypted_number = decrypt_phone(found_item.contact_number)
 
     # 3. Send Notification to User
-    message = f"Admin Override: Your claim for '{found_item.title}' was approved. Contact: {decrypted_number}"
+    message = f"Admin Override: Your claim for '{found_item.title}' was approved. Click to view details."
     
     # Create a notification object so it appears in their bell icon
     new_notif = models.Notification(
