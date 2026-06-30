@@ -163,6 +163,13 @@ export default function App() {
     setSelectedNotification(notif);
     // If it's an admin override, skip the secret question screen
     if (notif.message && notif.message.toLowerCase().includes("admin override")) {
+        // Mark as read in backend so it disappears from user's notification tray
+        const baseUrl = `${getApiUrl()}/items`;
+        fetch(`${baseUrl}/notifications/${notif.id}/read`, { method: "PATCH" })
+          .catch(err => console.error("Failed to mark notification as read:", err));
+
+        // Remove from local notifications list immediately
+        setNotifications(prev => prev.filter(n => n.id !== notif.id));
         setView('revealed_item');
     } else {
         // Standard flow: go to verification

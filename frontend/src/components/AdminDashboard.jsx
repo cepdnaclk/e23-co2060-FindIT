@@ -10,7 +10,7 @@ export default function AdminDashboard() {
   const [viewingAlert, setViewingAlert] = useState(null); 
   const [activeFilter, setActiveFilter] = useState('All');
 
-  const apiUrl = `${getApiUrl()}/items/`;
+  const apiUrl = `${getApiUrl()}/admin/items`;
 
   useEffect(() => {
     fetchData();
@@ -36,30 +36,30 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleOverride = async (alert) => {
+  const handleOverride = async (alertRecord) => {
     if (!window.confirm(`Force approve claim and override verification for this match?`)) return;
 
     try {
-      const response = await fetch(`${getApiUrl()}/admin/override-verification`, {
+      const response = await fetch(`${getApiUrl()}/admin/force-match`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          lost_item_id: alert.lost_item?.id,
-          found_item_id: alert.found_item?.id
+          found_item_id: alertRecord.found_item?.id,
+          claimer_email: alertRecord.claimer_email
         })
       });
 
       if (response.ok) {
-        alert("Verification overridden successfully! Notification sent to user.");
+        window.alert("Verification overridden successfully! Notification sent to user.");
         setViewingAlert(null);
         fetchData();
       } else {
         const err = await response.json();
-        alert(`Failed to override: ${err.detail || 'Unknown error'}`);
+        window.alert(`Failed to override: ${err.detail || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Error executing override:", error);
-      alert("Network error executing override request.");
+      window.alert("Network error executing override request.");
     }
   };
 
@@ -67,14 +67,14 @@ export default function AdminDashboard() {
     if (!window.confirm("Are you sure you want to delete this report permanently?")) return;
 
     try {
-      const response = await fetch(`${apiUrl}${itemId}`, {
+      const response = await fetch(`${apiUrl}/${itemId}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
         setItems(items.filter(item => item.id !== itemId));
       } else {
-        alert("Failed to delete the report.");
+        window.alert("Failed to delete the report.");
       }
     } catch (error) {
       console.error("Delete error:", error);
@@ -87,14 +87,16 @@ export default function AdminDashboard() {
                           item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           item.location?.toLowerCase().includes(searchTerm.toLowerCase());
     
+    const type = (item.item_type || item.type || '').toLowerCase();
+    
     if (activeFilter === 'All') return matchesSearch;
-    if (activeFilter === 'Lost') return matchesSearch && item.type === 'lost';
-    if (activeFilter === 'Found') return matchesSearch && item.type === 'found';
+    if (activeFilter === 'Lost') return matchesSearch && type === 'lost';
+    if (activeFilter === 'Found') return matchesSearch && type === 'found';
     return matchesSearch;
   });
 
-  const lostCount = items.filter(i => i.type === 'lost').length;
-  const foundCount = items.filter(i => i.type === 'found').length;
+  const lostCount = items.filter(i => (i.item_type || i.type || '').toLowerCase() === 'lost').length;
+  const foundCount = items.filter(i => (i.item_type || i.type || '').toLowerCase() === 'found').length;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 text-white min-h-screen">
@@ -164,9 +166,9 @@ export default function AdminDashboard() {
                   {/* Badge Row */}
                   <div className="p-4 pb-0 flex justify-between items-start z-10">
                     <span className={`px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider ${
-                      item.type === 'lost' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      (item.item_type || item.type || '').toLowerCase() === 'lost' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                     }`}>
-                      {item.type}
+                      {item.item_type || item.type}
                     </span>
                     <button 
                       onClick={() => handleDeleteItem(item.id)}
@@ -290,13 +292,21 @@ function FullItemView({ item, title, accent }) {
       
       <div className="p-4 bg-slate-900/60 rounded-xl space-y-2 border border-slate-700/50 text-xs text-slate-300">
         <p><strong className="text-slate-400">Reporter Email:</strong> {item.owner_email || 'Not provided'}</p>
+        <p><strong className="text-slate-400">Contact Number:</strong> {item.contact_number || 'Not provided'}</p>
         <p><strong className="text-slate-400">Category:</strong> {item.category}</p>
-        <p><strong className="text-slate-400">Location Context:</strong> {item.location}</p>
+        <p><strong className="text-slate-400">Location Context (Venue):</strong> {item.location}</p>
         <p><strong className="text-slate-400">Date/Time:</strong> {item.date} {item.time}</p>
+        
         {item.secret_question && (
           <div className="pt-2 mt-2 border-t border-slate-800">
             <p className="text-amber-400 font-semibold">Secret Verification Question:</p>
-            <p className="text-slate-400 italic">"{item.secret_question}"</p>
+            <p className="text-slate-400 italic font-mono">"{item.secret_question}"</p>
+          </div>
+        )}
+        {item.secret_answer && (
+          <div className="pt-1">
+            <p className="text-emerald-400 font-semibold">Secret Verification Answer:</p>
+            <p className="text-slate-400 italic font-mono">"{item.secret_answer}"</p>
           </div>
         )}
       </div>

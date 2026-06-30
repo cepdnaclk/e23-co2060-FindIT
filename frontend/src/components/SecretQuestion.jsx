@@ -6,6 +6,7 @@ export default function SecretQuestion({ item, userEmail, onSuccess, onBack }) {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
   if (!item) {
     return (
@@ -45,13 +46,17 @@ export default function SecretQuestion({ item, userEmail, onSuccess, onBack }) {
         onSuccess(data.phone_number);
       } else {
         const errData = await response.json();
+        const errorMessage = errData.detail || "Incorrect answer. Please try again.";
         
         // 3. SAFETY CHECK: If FastAPI sends an array (422 error), handle it gracefully
         if (Array.isArray(errData.detail)) {
             setError("Validation error: Please ensure all fields are sent.");
         } else {
             // Otherwise, it's a normal string error (like your 403 Lockout error)
-            setError(errData.detail || "Incorrect answer. Please try again.");
+            setError(errorMessage);
+            if (response.status === 403 && errorMessage.toLowerCase().includes("locked")) {
+                setIsLocked(true);
+            }
         }
         
       }
@@ -88,14 +93,15 @@ export default function SecretQuestion({ item, userEmail, onSuccess, onBack }) {
               type="text"
               value={answer}
               onChange={(e) => { setAnswer(e.target.value); setError(''); }}
-              placeholder="Enter your answer..."
-              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-indigo-500 transition"
+              placeholder={isLocked ? "Verification locked" : "Enter your answer..."}
+              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-indigo-500 transition disabled:opacity-50"
+              disabled={isLocked || loading}
               required
             />
             {error && <p className="text-rose-400 text-sm mt-2 font-medium">{error}</p>}
           </div>
-          <button disabled={loading} type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl transition shadow-lg">
-            {loading ? 'Verifying...' : 'Verify & View Item'}
+          <button disabled={isLocked || loading} type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl transition shadow-lg">
+            {loading ? 'Verifying...' : isLocked ? 'Access Locked' : 'Verify & View Item'}
           </button>
         </form>
       </div>
