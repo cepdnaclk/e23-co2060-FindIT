@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import database, models, schemas
 from matching import find_matches
-from utils import send_email
+from utils import send_email, ADMIN_EMAILS
 from fastapi import status 
 from security import decrypt_phone, encrypt_phone
 from vision_service import analyze_item_image, generate_smart_keywords
@@ -189,8 +189,8 @@ def verify_claim(claim: schemas.ClaimRequest,background_tasks: BackgroundTasks, 
         db.commit()
 
         if alert.failed_attempts == 2:
-        # HARDCODE your email here to test if it's an ENV variable issue
-            send_email("lilly.manu94@gmail.com", f"User {claim.user_email} locked out on item #{claim.item_id}", "🚨 Security Alert")
+            for admin_email in ADMIN_EMAILS:
+                send_email(admin_email, f"User {claim.user_email} locked out on item #{claim.item_id}", "🚨 Security Alert")
             raise HTTPException(status_code=403, detail="Account locked. Admin notified.")
 
         raise HTTPException(status_code=403, detail=f"Incorrect. {2 - alert.failed_attempts} attempts left.")

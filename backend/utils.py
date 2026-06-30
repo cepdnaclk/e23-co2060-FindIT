@@ -14,6 +14,13 @@ BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "finditsystem4@gmail.com")
 SENDER_NAME = "FindIT"
 
+# 3. Load admin emails (comma-separated list)
+ADMIN_EMAILS = [
+    email.strip()
+    for email in os.environ.get("ADMIN_EMAILS", "lilly.manu94@gmail.com").split(",")
+    if email.strip()
+]
+
 def send_email(recipient_email:str, content: str, subject: str = "Your FindIT Update"):
     # Setup Brevo Configuration
     configuration = sib_api_v3_sdk.Configuration()

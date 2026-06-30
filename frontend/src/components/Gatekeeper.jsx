@@ -15,7 +15,9 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
     setLoading(true);
 
     try {
-      const allowedEmails = ["lilly.manu94@gmail.com"];
+      const allowedEmails = import.meta.env.VITE_ADMIN_EMAILS
+        ? import.meta.env.VITE_ADMIN_EMAILS.split(',').map(email => email.trim())
+        : ["lilly.manu94@gmail.com"];
       const isAllowed = formData.email.endsWith("@eng.pdn.ac.lk") || allowedEmails.includes(formData.email);
 
       if (!isAllowed) {
@@ -60,7 +62,9 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
   // Locate this logic in your Gatekeeper.jsx or login flow
 const handleLogin = (userEmail) => {
     // Add your personal email to this whitelist
-    const whitelist = ["e23382@eng.pdn.ac.lk", "lilly.manu94@gmail.com"];
+    const whitelist = import.meta.env.VITE_ADMIN_EMAILS
+      ? ["e23382@eng.pdn.ac.lk", ...import.meta.env.VITE_ADMIN_EMAILS.split(',').map(email => email.trim())]
+      : ["e23382@eng.pdn.ac.lk", "lilly.manu94@gmail.com"];
     
     if (userEmail.endsWith("@eng.pdn.ac.lk") || whitelist.includes(userEmail)) {
         // Proceed with login

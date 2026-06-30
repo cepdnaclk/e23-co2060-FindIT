@@ -13,7 +13,9 @@ import AdminDashboard from './components/AdminDashboard';
 import { getApiUrl } from './config';
 
 const CATEGORIES = ["Electronics", "IDs/Documents", "Keys", "Wallets/Bags", "Books/Stationary", "Other"];
-const ADMIN_EMAILS = ['lilly.manu94@gmail.com'];
+const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS
+  ? import.meta.env.VITE_ADMIN_EMAILS.split(',').map(email => email.trim())
+  : ['lilly.manu94@gmail.com'];
 
 export default function App() {
   const [view, setView] = useState(localStorage.getItem('userEmail') ? 'dashboard' : 'landing');

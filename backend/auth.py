@@ -4,7 +4,7 @@ from schemas import EmailRequest, OTPVerifyRequest
 import models
 from database import get_db
 import random
-from utils import send_email
+from utils import send_email, ADMIN_EMAILS
 
 
 router = APIRouter()
@@ -22,7 +22,7 @@ def send_otp_endpoint(
 ):
       # --- DOMAIN RESTRICTION WHITELIST ---
     allowed_domains = ["@eng.pdn.ac.lk"]
-    allowed_emails = ["lilly.manu94@gmail.com"] # Add your personal email here
+    allowed_emails = ADMIN_EMAILS
 
     is_allowed = any(request.email.endswith(domain) for domain in allowed_domains) or request.email in allowed_emails
     
