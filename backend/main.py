@@ -11,6 +11,7 @@ from database import SessionLocal
 import models
 from email_service import send_retention_warning_email
 import os
+
 models.Base.metadata.create_all(bind=engine)
 
 # --- BACKGROUND SCHEDULER ---
@@ -18,11 +19,12 @@ def run_daily_cleanup():
     db = SessionLocal()
     try:
         now = datetime.utcnow()
-        # CHANGE THIS LINE:
+        # CHANGE THIS LINE: Make sure to put your actual Render URL here!
         backend_url = os.getenv("BACKEND_URL", "https://your-actual-backend-url.onrender.com")
+        
         # 1. SEND 5-DAY WARNINGS
         # Find items that expire in less than 2 days, where we haven't sent a warning yet
-        two_days_from_now = now + timedelta(days=2)
+        two_days_from_now = now + timedelta(minutes=2)
         warning_items = db.query(models.Item).filter(
             models.Item.expires_at <= two_days_from_now,
             models.Item.warning_sent == False
@@ -47,10 +49,6 @@ def run_daily_cleanup():
     finally:
         db.close()
 
-# Start the scheduler when the app boots
-scheduler = BackgroundScheduler()
-scheduler.add_job(run_daily_cleanup, 'interval', hours=24) # Runs once a day
-scheduler.start()
 # ----------------------------
 
 app = FastAPI()
@@ -59,7 +57,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173",
-                   "http://localhost:5174", # <-- Add this line!
+                   "http://localhost:5174", 
                    "https://findit-frontend-e350.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -69,7 +67,7 @@ app.add_middleware(
 # Attach the existing auth endpoints
 app.include_router(auth_router)
 
-# NEW: Attach the items endpoints you are building
+# Attach the items endpoints you are building
 app.include_router(items.router)
 app.include_router(admin.router)
 
@@ -78,5 +76,17 @@ def home():
     return {
         "status": "online",
         "message": "FindIT Backend is Running!",
-        "version": "2.0.0-FreshStart" # Track your new beginning!
+        "version": "2.0.0-FreshStart" 
     }
+
+# --- START THE SCHEDULER (Only ONCE!) ---
+scheduler = BackgroundScheduler()
+
+# Force it to run instantly on boot, then start the 24-hour timer!
+scheduler.add_job(
+    run_daily_cleanup, 
+    'interval', 
+    minutes=1,
+    next_run_time=datetime.now()
+) 
+scheduler.start()
