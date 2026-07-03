@@ -282,7 +282,7 @@ def extend_item_retention(item_id: int, db: Session = Depends(database.get_db)):
         return RedirectResponse(url=f"{frontend_url}?message=expired")
 
     # Add 7 days from right now, and reset the warning flag!
-    db_item.expires_at = datetime.utcnow() + timedelta(minutes=7)
+    db_item.expires_at = datetime.utcnow() + timedelta(days=7)
     db_item.warning_sent = False
     db.commit()
 

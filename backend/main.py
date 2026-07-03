@@ -24,7 +24,7 @@ def run_daily_cleanup():
         
         # 1. SEND 5-DAY WARNINGS
         # Find items that expire in less than 2 days, where we haven't sent a warning yet
-        two_days_from_now = now + timedelta(minutes=2)
+        two_days_from_now = now + timedelta(days=2)
         warning_items = db.query(models.Item).filter(
             models.Item.expires_at <= two_days_from_now,
             models.Item.warning_sent == False
@@ -86,7 +86,7 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(
     run_daily_cleanup, 
     'interval', 
-    minutes=1,
+    hours=24,
     next_run_time=datetime.now()
 ) 
 scheduler.start()
