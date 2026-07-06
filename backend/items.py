@@ -159,28 +159,86 @@ def verify_claim(claim: schemas.ClaimRequest,background_tasks: BackgroundTasks, 
         raise HTTPException(status_code=404, detail="Item not found")
 
     # 2. ADMIN LOCKOUT CHECK: See if this user is already locked out
+    from sqlalchemy import or_
     alert = db.query(models.AdminAlert).filter(
-        models.AdminAlert.found_item_id == claim.item_id,
-        models.AdminAlert.claimer_email == claim.user_email 
+        or_(
+            models.AdminAlert.found_item_id == claim.item_id,
+            models.AdminAlert.lost_item_id == claim.item_id
+        ),
+        models.AdminAlert.claimer_email == claim.user_email,
+        models.AdminAlert.is_resolved == False
     ).first()
 
-    if alert and alert.failed_attempts >= 2 and not alert.is_resolved:
+    if alert and alert.failed_attempts >= 2:
         raise HTTPException(status_code=403, detail="Account locked for this item. An admin has been notified.")
 
     # 3. VERIFY ANSWER
     if db_item.secret_answer.strip().lower() == claim.user_answer.strip().lower():
         # SUCCESS: Decrypt the phone number and return it
         decrypted_phone = decrypt_phone(db_item.contact_number)
+        
+        # Mark matching notification as read so it disappears from user's tray
+        notif = db.query(models.Notification).filter(
+            models.Notification.user_email == claim.user_email,
+            models.Notification.matched_item_id == claim.item_id
+        ).first()
+        if notif:
+            notif.is_read = True
+            db.commit()
+            
         return {
             "status": "success",
             "message": "Verification successful!",
             "phone_number": decrypted_phone 
         }
     else:
-        # FAILED: Increment the tracker
         if not alert:
-            # First time failing
-            alert = models.AdminAlert(found_item_id=claim.item_id, claimer_email=claim.user_email, failed_attempts=1)
+            # First time failing: Resolve both lost and found item IDs
+            item_a_type = (db_item.item_type or "").lower()
+            resolved_item_id = None
+            
+            # Find matching item of opposite type owned by the claimant
+            target_type = "Found" if item_a_type == "lost" else "Lost"
+            opposite_items = db.query(models.Item).filter(
+                models.Item.owner_email == claim.user_email,
+                models.Item.item_type == target_type
+            ).all()
+            
+            if opposite_items:
+                notif = db.query(models.Notification).filter(
+                    models.Notification.user_email == claim.user_email,
+                    models.Notification.matched_item_id == claim.item_id
+                ).first()
+                if notif and notif.message:
+                    for item in opposite_items:
+                        if item.title and item.title in notif.message:
+                            resolved_item_id = item.id
+                            break
+                if not resolved_item_id:
+                    from thefuzz import fuzz
+                    best_score = -1
+                    for item in opposite_items:
+                        keywords_a = item.search_keywords if item.search_keywords else item.title
+                        keywords_b = db_item.search_keywords if db_item.search_keywords else db_item.title
+                        score = fuzz.token_set_ratio(keywords_a, keywords_b)
+                        if score > best_score:
+                            best_score = score
+                            resolved_item_id = item.id
+            
+            # Assign correctly based on types
+            if item_a_type == "lost":
+                lost_item_id = db_item.id
+                found_item_id = resolved_item_id
+            else:
+                found_item_id = db_item.id
+                lost_item_id = resolved_item_id
+                
+            alert = models.AdminAlert(
+                found_item_id=found_item_id,
+                lost_item_id=lost_item_id,
+                claimer_email=claim.user_email,
+                failed_attempts=1
+            )
             db.add(alert)
         else:
             # Failed again

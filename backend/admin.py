@@ -7,10 +7,22 @@ from security import decrypt_phone
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
+def serialize_item_with_decrypted_phone(item: models.Item) -> dict:
+    if not item:
+        return None
+    item_dict = {c.name: getattr(item, c.name) for c in item.__table__.columns}
+    if item_dict.get("contact_number"):
+        try:
+            item_dict["contact_number"] = decrypt_phone(item_dict["contact_number"])
+        except Exception:
+            pass
+    return item_dict
+
 @router.get("/items")
 def get_all_reports(db: Session = Depends(get_db)):
     """Fetch all system reports for the admin dashboard."""
-    return db.query(models.Item).order_by(models.Item.id.desc()).all()
+    items = db.query(models.Item).order_by(models.Item.id.desc()).all()
+    return [serialize_item_with_decrypted_phone(item) for item in items]
 
 @router.delete("/items/{item_id}")
 def delete_report(item_id: int, db: Session = Depends(get_db)):
@@ -34,10 +46,45 @@ def get_active_alerts(db: Session = Depends(get_db)):
         found_item = db.query(models.Item).filter(models.Item.id == alert.found_item_id).first()
         lost_item = db.query(models.Item).filter(models.Item.id == alert.lost_item_id).first()
         
+        # DYNAMIC FALLBACK: If lost_item_id is not set, resolve it on-the-fly!
+        if not lost_item and alert.claimer_email and found_item:
+            lost_items = db.query(models.Item).filter(
+                models.Item.owner_email == alert.claimer_email,
+                models.Item.item_type == "Lost"
+            ).all()
+            if lost_items:
+                # 1. Match via Notification message
+                notif = db.query(models.Notification).filter(
+                    models.Notification.user_email == alert.claimer_email,
+                    models.Notification.matched_item_id == alert.found_item_id
+                ).first()
+                if notif and notif.message:
+                    for item in lost_items:
+                        if item.title and item.title in notif.message:
+                            lost_item = item
+                            break
+                
+                # 2. Fallback to fuzzy matching
+                if not lost_item:
+                    from thefuzz import fuzz
+                    best_score = -1
+                    for item in lost_items:
+                        keywords_a = item.search_keywords if item.search_keywords else item.title
+                        keywords_b = found_item.search_keywords if found_item.search_keywords else found_item.title
+                        score = fuzz.token_set_ratio(keywords_a, keywords_b)
+                        if score > best_score:
+                            best_score = score
+                            lost_item = item
+                
+                # Persist the resolved link to the database
+                if lost_item:
+                    alert.lost_item_id = lost_item.id
+                    db.commit()
+        
         results.append({
             "alert_id": alert.id,
-            "found_item": found_item,
-            "lost_item": lost_item,
+            "found_item": serialize_item_with_decrypted_phone(found_item),
+            "lost_item": serialize_item_with_decrypted_phone(lost_item),
             "claimer_email": alert.claimer_email
         })
     return results
