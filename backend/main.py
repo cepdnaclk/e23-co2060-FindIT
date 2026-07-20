@@ -38,7 +38,8 @@ def run_daily_cleanup():
 
         # 2. DELETE EXPIRED ITEMS (Day 7+)
         # Find items where the expiration date has passed
-        expired_items = db.query(models.Item).filter(models.Item.expires_at < now).all()
+        one_day_ago = now - timedelta(days=1)
+        expired_items = db.query(models.Item).filter(models.Item.expires_at < one_day_ago).all()
         for item in expired_items:
             # Delete associated notifications first to prevent foreign key errors
             db.query(models.Notification).filter(models.Notification.matched_item_id == item.id).delete()
@@ -87,6 +88,5 @@ scheduler.add_job(
     run_daily_cleanup, 
     'interval', 
     hours=24,
-    next_run_time=datetime.now()
 ) 
 scheduler.start()

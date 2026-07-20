@@ -37,6 +37,8 @@ class Item(Base):
     reporter = relationship("User", back_populates="items")
     # NEW: 7-Day cleanup columns
     # CHANGE THIS LINE:
+    # In models.py
+# Use a clear default
     expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=7))
     warning_sent = Column(Boolean, default=False)
 
