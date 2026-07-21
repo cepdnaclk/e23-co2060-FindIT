@@ -85,3 +85,7 @@ class AdminAlertResponse(AdminAlertBase):
 class ForceMatchRequest(BaseModel):
     found_item_id: int
     claimer_email: str
+
+class ManualMatchRequest(BaseModel):
+    lost_item_id: int
+    found_item_id: int

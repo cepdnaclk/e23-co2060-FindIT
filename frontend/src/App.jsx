@@ -73,17 +73,19 @@ export default function App() {
 
   // Updated Logic to handle Admin Check during login
   const handleAuthSuccess = (email) => {
+    let checkAdmin = false;
     if (email) {
       setUserEmail(email);
       localStorage.setItem('userEmail', email);
 
       // Check if user is an admin
-      const checkAdmin = ADMIN_EMAILS.includes(email);
+      checkAdmin = ADMIN_EMAILS.includes(email);
       setIsAdmin(checkAdmin);
       localStorage.setItem('isAdmin', checkAdmin);
     }
-    setView('dashboard');
+    setView(checkAdmin ? 'admin' : 'dashboard');
   };
+
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -201,11 +203,12 @@ export default function App() {
 
       {view === 'dashboard' && (
         <div className="flex flex-col">
-          <Selection setReportType={setReportType} setView={setView} setSelectedImage={setSelectedImage} />
-          <div className="px-6 md:px-10"><hr className="border-slate-800 my-2"/></div>
+          {!isAdmin && <Selection setReportType={setReportType} setView={setView} setSelectedImage={setSelectedImage} />}
+          {!isAdmin && <div className="px-6 md:px-10"><hr className="border-slate-800 my-2"/></div>}
           <Dashboard currentUser={userEmail} />
         </div>
       )}
+
 
       {view === 'report' && (
         <ReportForm 

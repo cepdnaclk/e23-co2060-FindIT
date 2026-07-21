@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, ShieldCheck, Package, AlertCircle, CheckCircle2, Search, X, Calendar, Clock, MapPin, Tag } from 'lucide-react';
+import { Trash2, ShieldCheck, Package, AlertCircle, CheckCircle2, Search, X, Calendar, Clock, MapPin, Tag, Link2, Check } from 'lucide-react';
 import { getApiUrl } from '../config';
 
 export default function AdminDashboard() {
@@ -9,6 +9,12 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingAlert, setViewingAlert] = useState(null); 
   const [activeFilter, setActiveFilter] = useState('All');
+
+  // Manual Matching State
+  const [selectedLostItem, setSelectedLostItem] = useState(null);
+  const [selectedFoundItem, setSelectedFoundItem] = useState(null);
+  const [showManualMatchModal, setShowManualMatchModal] = useState(false);
+  const [matchingInProgress, setMatchingInProgress] = useState(false);
 
   const apiUrl = `${getApiUrl()}/admin/items`;
 
@@ -73,11 +79,64 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         setItems(items.filter(item => item.id !== itemId));
+        if (selectedLostItem?.id === itemId) setSelectedLostItem(null);
+        if (selectedFoundItem?.id === itemId) setSelectedFoundItem(null);
+        window.alert("Report permanently deleted.");
       } else {
-        window.alert("Failed to delete the report.");
+        const err = await response.json().catch(() => ({}));
+        window.alert(`Failed to delete the report: ${err.detail || 'Server error'}`);
       }
     } catch (error) {
       console.error("Delete error:", error);
+      window.alert("Network error deleting report.");
+    }
+  };
+
+  const handleManualMatch = async () => {
+    if (!selectedLostItem || !selectedFoundItem) return;
+    setMatchingInProgress(true);
+
+    try {
+      const response = await fetch(`${getApiUrl()}/admin/match-reports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lost_item_id: selectedLostItem.id,
+          found_item_id: selectedFoundItem.id
+        })
+      });
+
+      if (response.ok) {
+        window.alert(`Match created successfully! Notifications sent to both ${selectedLostItem.owner_email || 'Lost reporter'} and ${selectedFoundItem.owner_email || 'Found reporter'}.`);
+        setSelectedLostItem(null);
+        setSelectedFoundItem(null);
+        setShowManualMatchModal(false);
+      } else {
+        const err = await response.json();
+        window.alert(`Failed to match reports: ${err.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Error creating manual match:", error);
+      window.alert("Network error creating manual match.");
+    } finally {
+      setMatchingInProgress(false);
+    }
+  };
+
+  const toggleSelectItemForMatch = (item) => {
+    const isLost = (item.item_type || item.type || '').toLowerCase() === 'lost';
+    if (isLost) {
+      if (selectedLostItem?.id === item.id) {
+        setSelectedLostItem(null);
+      } else {
+        setSelectedLostItem(item);
+      }
+    } else {
+      if (selectedFoundItem?.id === item.id) {
+        setSelectedFoundItem(null);
+      } else {
+        setSelectedFoundItem(item);
+      }
     }
   };
 
@@ -108,7 +167,7 @@ export default function AdminDashboard() {
             <ShieldCheck className="text-indigo-400" size={38} />
             Admin Control Center
           </h1>
-          <p className="text-slate-400 mt-2">Manage user lockouts, override verification claims, and review system reports.</p>
+          <p className="text-slate-400 mt-2">Manage user lockouts, delete invalid reports, and manually match potential reports.</p>
         </div>
         
         {/* Statistics Widgets */}
@@ -118,6 +177,58 @@ export default function AdminDashboard() {
           <StatCard icon={<CheckCircle2 className="text-emerald-400" />} label="Found Reports" value={foundCount} />
         </div>
       </div>
+
+      {/* Manual Match Banner Bar when items are selected */}
+      {(selectedLostItem || selectedFoundItem) && (
+        <div className="bg-indigo-950/90 border-2 border-indigo-500/80 p-5 rounded-2xl mb-8 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in duration-200">
+          <div className="flex flex-col md:flex-row items-center gap-4 text-sm w-full md:w-auto">
+            <div className="flex items-center gap-2 font-black text-indigo-400 uppercase tracking-wider text-xs">
+              <Link2 size={18} /> Manual Match Builder:
+            </div>
+            
+            <div className="flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 w-full md:w-auto justify-between">
+              <span className="text-slate-400 text-xs font-bold">LOST:</span>
+              {selectedLostItem ? (
+                <span className="font-bold text-rose-400 truncate max-w-[150px]">{selectedLostItem.title}</span>
+              ) : (
+                <span className="text-slate-500 text-xs italic">Select a Lost report below</span>
+              )}
+            </div>
+
+            <span className="hidden md:inline text-indigo-400 font-bold">+</span>
+
+            <div className="flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 w-full md:w-auto justify-between">
+              <span className="text-slate-400 text-xs font-bold">FOUND:</span>
+              {selectedFoundItem ? (
+                <span className="font-bold text-emerald-400 truncate max-w-[150px]">{selectedFoundItem.title}</span>
+              ) : (
+                <span className="text-slate-500 text-xs italic">Select a Found report below</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+            <button 
+              onClick={() => { setSelectedLostItem(null); setSelectedFoundItem(null); }}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition"
+            >
+              Clear Selection
+            </button>
+            <button 
+              disabled={!selectedLostItem || !selectedFoundItem}
+              onClick={() => setShowManualMatchModal(true)}
+              className={`px-5 py-2.5 rounded-xl font-black text-sm transition flex items-center gap-2 ${
+                selectedLostItem && selectedFoundItem
+                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+              }`}
+            >
+              <CheckCircle2 size={16} />
+              Review & Match Pair
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         
@@ -160,36 +271,68 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredItems.map((item) => (
-                <div key={item.id} className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden flex flex-col group relative">
-                  
-                  {/* Badge Row */}
-                  <div className="p-4 pb-0 flex justify-between items-start z-10">
-                    <span className={`px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider ${
-                      (item.item_type || item.type || '').toLowerCase() === 'lost' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    }`}>
-                      {item.item_type || item.type}
-                    </span>
-                    <button 
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="p-2 bg-slate-900/80 hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-xl border border-slate-700/50 transition opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+              {filteredItems.map((item) => {
+                const isLost = (item.item_type || item.type || '').toLowerCase() === 'lost';
+                const isSelected = isLost ? selectedLostItem?.id === item.id : selectedFoundItem?.id === item.id;
 
-                  <div className="p-5 pt-3 flex-1 flex flex-col">
-                    <h3 className="text-xl font-bold line-clamp-1 text-white group-hover:text-indigo-400 transition mb-1">{item.title}</h3>
-                    <p className="text-slate-400 text-sm line-clamp-2 mb-4 flex-1">{item.description}</p>
+                return (
+                  <div 
+                    key={item.id} 
+                    className={`bg-slate-800 rounded-2xl border transition overflow-hidden flex flex-col group relative ${
+                      isSelected 
+                        ? isLost 
+                          ? 'border-rose-500 ring-2 ring-rose-500/50 bg-slate-800/90' 
+                          : 'border-emerald-500 ring-2 ring-emerald-500/50 bg-slate-800/90'
+                        : 'border-slate-700'
+                    }`}
+                  >
                     
-                    <div className="space-y-2 pt-3 border-t border-slate-700/60 text-xs text-slate-300">
-                      <div className="flex items-center gap-2"><Tag size={13} className="text-indigo-400" /> <span>{item.category}</span></div>
-                      <div className="flex items-center gap-2"><MapPin size={13} className="text-sky-400" /> <span>{item.location}</span></div>
-                      <div className="flex items-center gap-2"><Calendar size={13} className="text-emerald-400" /> <span>{item.date}</span></div>
+                    {/* Badge & Actions Row */}
+                    <div className="p-4 pb-0 flex justify-between items-start z-10">
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider ${
+                        isLost ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      }`}>
+                        {item.item_type || item.type}
+                      </span>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleSelectItemForMatch(item)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                            isSelected
+                              ? isLost 
+                                ? 'bg-rose-600 text-white' 
+                                : 'bg-emerald-600 text-white'
+                              : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-700'
+                          }`}
+                        >
+                          {isSelected ? <Check size={14} /> : <Link2 size={14} />}
+                          <span>{isSelected ? 'Selected' : 'Select to Match'}</span>
+                        </button>
+
+                        <button 
+                          onClick={() => handleDeleteItem(item.id)}
+                          title="Delete report permanently"
+                          className="p-1.5 bg-slate-900/80 hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-xl border border-slate-700/50 transition"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-5 pt-3 flex-1 flex flex-col">
+                      <h3 className="text-xl font-bold line-clamp-1 text-white group-hover:text-indigo-400 transition mb-1">{item.title}</h3>
+                      <p className="text-slate-400 text-sm line-clamp-2 mb-4 flex-1">{item.description}</p>
+                      
+                      <div className="space-y-2 pt-3 border-t border-slate-700/60 text-xs text-slate-300">
+                        <div className="flex items-center gap-2"><Tag size={13} className="text-indigo-400" /> <span>{item.category}</span></div>
+                        <div className="flex items-center gap-2"><MapPin size={13} className="text-sky-400" /> <span>{item.location}</span></div>
+                        <div className="flex items-center gap-2"><Calendar size={13} className="text-emerald-400" /> <span>{item.date}</span></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -265,6 +408,53 @@ export default function AdminDashboard() {
                 className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black shadow-lg shadow-indigo-600/20 transition"
               >
                 Approve Claim & Override Lock
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Manual Report Matching Confirmation Modal */}
+      {showManualMatchModal && selectedLostItem && selectedFoundItem && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-6 animate-in fade-in duration-200">
+          <div className="bg-slate-900 w-full max-w-5xl rounded-[2rem] border border-indigo-500/50 shadow-2xl p-8 max-h-[90vh] overflow-y-auto flex flex-col relative">
+            
+            <button 
+              onClick={() => setShowManualMatchModal(false)}
+              className="absolute top-6 right-6 text-slate-400 hover:text-white p-2 bg-slate-800 hover:bg-slate-700 rounded-full transition"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="mb-6">
+              <h2 className="text-2xl font-black text-white flex items-center gap-3">
+                <Link2 className="text-indigo-400" size={28} /> Confirm Manual Match Pair
+              </h2>
+              <p className="text-slate-400 text-sm mt-1">Review the details of both reports before pairing them. Matching will send notifications to both reporters.</p>
+            </div>
+
+            {/* Side-by-Side Item Preview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 mb-8">
+              <FullItemView title="Selected Lost Item Report" item={selectedLostItem} accent="rose" />
+              <FullItemView title="Selected Found Item Report" item={selectedFoundItem} accent="emerald" />
+            </div>
+
+            {/* Bottom Actions Frame */}
+            <div className="flex items-center justify-end gap-4 border-t border-slate-800 pt-6">
+              <button 
+                onClick={() => setShowManualMatchModal(false)}
+                className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl font-bold transition"
+              >
+                Cancel
+              </button>
+              <button 
+                disabled={matchingInProgress}
+                onClick={handleManualMatch}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black shadow-lg shadow-indigo-600/30 transition flex items-center gap-2"
+              >
+                <CheckCircle2 size={18} />
+                {matchingInProgress ? 'Notifying Reporters...' : 'Confirm Match & Notify Reporters'}
               </button>
             </div>
 

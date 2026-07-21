@@ -31,9 +31,16 @@ def delete_report(item_id: int, db: Session = Depends(get_db)):
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     
+    # Clean up dependent notifications and admin alerts to avoid foreign key constraint errors
+    db.query(models.Notification).filter(models.Notification.matched_item_id == item_id).delete(synchronize_session=False)
+    db.query(models.AdminAlert).filter(
+        (models.AdminAlert.found_item_id == item_id) | (models.AdminAlert.lost_item_id == item_id)
+    ).delete(synchronize_session=False)
+
     db.delete(item)
     db.commit()
     return {"message": "Report permanently deleted"}
+
 
 @router.get("/alerts")
 def get_active_alerts(db: Session = Depends(get_db)):
@@ -120,3 +127,49 @@ def force_match(request: schemas.ForceMatchRequest, background_tasks: Background
     background_tasks.add_task(send_email, request.claimer_email, message, "Claim Approved by Admin")
     
     return {"status": "success", "message": "Override applied and user notified."}
+
+@router.post("/match-reports")
+def match_reports(request: schemas.ManualMatchRequest, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
+    """Admin manual override to match a lost item with a found item and notify both reporters."""
+    lost_item = db.query(models.Item).filter(models.Item.id == request.lost_item_id).first()
+    found_item = db.query(models.Item).filter(models.Item.id == request.found_item_id).first()
+
+    if not lost_item or not found_item:
+        raise HTTPException(status_code=404, detail="One or both items were not found")
+
+    import os
+    from email_service import send_match_notification_email
+    frontend_url = os.getenv("FRONTEND_URL", "https://findit-frontend-e350.onrender.com")
+
+    # 1. Notify Lost Item Owner
+    if lost_item.owner_email:
+        notif_lost = models.Notification(
+            user_email=lost_item.owner_email,
+            message=f"Admin match: A potential match was paired with your lost item '{lost_item.title}'!",
+            matched_item_id=found_item.id
+        )
+        db.add(notif_lost)
+        background_tasks.add_task(
+            send_match_notification_email,
+            receiver_email=lost_item.owner_email,
+            item_name=lost_item.title,
+            match_link=frontend_url
+        )
+
+    # 2. Notify Found Item Owner
+    if found_item.owner_email:
+        notif_found = models.Notification(
+            user_email=found_item.owner_email,
+            message=f"Admin match: Someone's lost item '{lost_item.title}' was matched with your found report!",
+            matched_item_id=lost_item.id
+        )
+        db.add(notif_found)
+        background_tasks.add_task(
+            send_match_notification_email,
+            receiver_email=found_item.owner_email,
+            item_name=found_item.title,
+            match_link=frontend_url
+        )
+
+    db.commit()
+    return {"status": "success", "message": "Manual match created and both reporters notified."}

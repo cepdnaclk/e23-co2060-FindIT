@@ -320,14 +320,18 @@ def delete_item(item_id: int, db: Session = Depends(database.get_db)):
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
     
-    # 2. Delete any notifications linked to this item (prevents MySQL foreign key crash)
-    db.query(models.Notification).filter(models.Notification.matched_item_id == item_id).delete()
+    # 2. Delete any notifications and admin alerts linked to this item (prevents foreign key crash)
+    db.query(models.Notification).filter(models.Notification.matched_item_id == item_id).delete(synchronize_session=False)
+    db.query(models.AdminAlert).filter(
+        (models.AdminAlert.found_item_id == item_id) | (models.AdminAlert.lost_item_id == item_id)
+    ).delete(synchronize_session=False)
     
     # 3. Delete the actual item
     db.delete(db_item)
     db.commit()
     
     return {"message": "Item deleted successfully!"}
+
 
 @router.get("/extend/{item_id}")
 def extend_item_retention(item_id: int, db: Session = Depends(database.get_db)):
