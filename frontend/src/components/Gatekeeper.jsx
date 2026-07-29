@@ -1,54 +1,55 @@
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Loader2, Sparkles, Mail, LockKeyhole } from 'lucide-react';
+import { Button, Card, Badge, Input } from './ui';
 
-export default function Gatekeeper({ type, onBack, onSuccess }) { 
+export default function Gatekeeper({ type, onBack, onSuccess }) {
   const [formData, setFormData] = useState({ name: '', email: '' });
-  const [otp, setOtp] = useState(''); 
-  const [step, setStep] = useState('email'); 
-  const [error, setError] = useState("");
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState('email');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-// 1. Send the OTP to the user's email
+  // 1. Send the OTP to the user's email
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
       const allowedEmails = import.meta.env.VITE_ADMIN_EMAILS
-        ? import.meta.env.VITE_ADMIN_EMAILS.split(',').map(email => email.trim())
-        : ["lilly.manu94@gmail.com"];
-      const isAllowed = formData.email.endsWith("@eng.pdn.ac.lk") || allowedEmails.includes(formData.email);
+        ? import.meta.env.VITE_ADMIN_EMAILS.split(',').map((email) => email.trim())
+        : ['lilly.manu94@gmail.com'];
+      const isAllowed = formData.email.endsWith('@eng.pdn.ac.lk') || allowedEmails.includes(formData.email);
 
       if (!isAllowed) {
-      throw new Error("Access restricted: Please use your university email.");
-  }
+        throw new Error('Access restricted: Please use your university email.');
+      }
 
       const apiUrl = import.meta.env.VITE_API_URL;
-      
+
       // DIAGNOSTIC LOG: This will print exactly where the app is sending the request
       const targetUrl = `${apiUrl}/send-otp`;
-      console.log("🚀 ATTEMPTING TO SEND OTP TO:", targetUrl);
+      console.log('🚀 ATTEMPTING TO SEND OTP TO:', targetUrl);
 
       const response = await fetch(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, name: formData.name })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, name: formData.name }),
       });
 
       if (!response.ok) {
         // BULLETPROOF ERROR HANDLING: Read as raw text first
         const errorText = await response.text();
         console.error(`❌ RAW BACKEND RESPONSE (${response.status}):`, errorText);
-        
+
         let errData = {};
         try {
-            errData = JSON.parse(errorText); // Try to convert to JSON safely
-        } catch (parseError) {
-            throw new Error(`Server returned Error ${response.status}. Open F12 Console for details.`);
+          errData = JSON.parse(errorText); // Try to convert to JSON safely
+        } catch {
+          throw new Error(`Server returned Error ${response.status}. Open F12 Console for details.`);
         }
-        
-        throw new Error(errData.detail || "Failed to send OTP.");
+
+        throw new Error(errData.detail || 'Failed to send OTP.');
       }
 
       setStep('otp');
@@ -59,51 +60,35 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
     }
   };
 
-  // Locate this logic in your Gatekeeper.jsx or login flow
-const handleLogin = (userEmail) => {
-    // Add your personal email to this whitelist
-    const whitelist = import.meta.env.VITE_ADMIN_EMAILS
-      ? ["e23382@eng.pdn.ac.lk", ...import.meta.env.VITE_ADMIN_EMAILS.split(',').map(email => email.trim())]
-      : ["e23382@eng.pdn.ac.lk", "lilly.manu94@gmail.com"];
-    
-    if (userEmail.endsWith("@eng.pdn.ac.lk") || whitelist.includes(userEmail)) {
-        // Proceed with login
-        setAccessGranted(true);
-    } else {
-        // Show restriction message
-        alert("Access restricted: Please use your university email.");
-    }
-};
-
   // 2. Verify the OTP the user entered
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
-      const targetUrl = `${apiUrl}/verify-otp`;      
-      console.log("🚀 ATTEMPTING TO VERIFY OTP AT:", targetUrl);
+      const targetUrl = `${apiUrl}/verify-otp`;
+      console.log('🚀 ATTEMPTING TO VERIFY OTP AT:', targetUrl);
 
       const response = await fetch(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, otp: otp }) 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, otp }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`❌ RAW BACKEND RESPONSE (${response.status}):`, errorText);
-        
+
         let errData = {};
         try {
-            errData = JSON.parse(errorText);
-        } catch (parseError) {
-            throw new Error(`Server returned Error ${response.status}. Open F12 Console for details.`);
+          errData = JSON.parse(errorText);
+        } catch {
+          throw new Error(`Server returned Error ${response.status}. Open F12 Console for details.`);
         }
-        
-        throw new Error(errData.detail || "Invalid or expired OTP.");
+
+        throw new Error(errData.detail || 'Invalid or expired OTP.');
       }
 
       onSuccess(formData.email);
@@ -115,75 +100,132 @@ const handleLogin = (userEmail) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6 animate-in fade-in zoom-in duration-500">
-      <div className="max-w-md w-full bg-slate-800 p-10 rounded-3xl shadow-2xl border border-slate-700 relative">
-        
-        {/* Back Button */}
-        <button 
-          onClick={step === 'email' ? onBack : () => setStep('email')} 
-          className="absolute top-6 left-6 text-slate-400 hover:text-white transition flex items-center gap-1 font-bold"
-        >
-          <ArrowLeft size={18} /> Back
-        </button>
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_30%),linear-gradient(135deg,_#020617_0%,_#0f172a_45%,_#111827_100%)] px-4 py-8 sm:px-6 lg:px-8">
+      <Card className="relative w-full max-w-md overflow-hidden border-slate-800/80 bg-slate-900/80 p-0 shadow-2xl shadow-slate-950/50 backdrop-blur-xl">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.24),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.16),_transparent_30%)]" />
 
-        {/* Dynamic Headers based on the current step */}
-        <h2 className="text-3xl font-black text-white text-center mb-2 mt-4">
-          {step === 'email' ? (type === 'signin' ? 'Create Account' : 'Welcome Back') : 'Enter OTP'}
-        </h2>
-        <p className="text-slate-400 text-center mb-8">
-          {step === 'email' ? 'Enter your university email to continue' : `We sent a 6-digit code to ${formData.email}`}
-        </p>
+        <div className="relative p-6 sm:p-8 lg:p-10">
+          <Button
+            onClick={step === 'email' ? onBack : () => setStep('email')}
+            variant="ghost"
+            size="sm"
+            className="rounded-full px-3 py-2 text-slate-400 hover:text-white"
+          >
+            <ArrowLeft size={18} />
+            <span>Back</span>
+          </Button>
 
-        {error && <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-sm font-bold text-center">{error}</div>}
+          <div className="mt-8 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-300">
+              <ShieldCheck size={22} />
+            </div>
+            <Badge variant="verified" className="mb-4 px-3 py-1.5 text-[11px]">
+              Secure access
+            </Badge>
+            <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+              {step === 'email' ? (type === 'signin' ? 'Create Account' : 'Welcome Back') : 'Verify Identity'}
+            </h2>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-400 sm:text-base">
+              {step === 'email'
+                ? 'Enter your university email to begin the protected verification flow.'
+                : `We sent a 6-digit code to ${formData.email}`}
+            </p>
+          </div>
 
-        {/* Step 1: Email Form */}
-        {step === 'email' ? (
-          <form onSubmit={handleSendOtp} className="space-y-6">
-            {type === 'signin' && (
-              <input 
-                type="text" 
-                placeholder="Full Name" 
-                value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
-                className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" 
-                required 
+          <div className="mt-8 flex justify-center">
+            <Badge variant={step === 'email' ? 'pending' : 'verified'} className="px-3.5 py-1.5 text-[11px]">
+              {step === 'email' ? 'Step 1 of 2' : 'Step 2 of 2'}
+            </Badge>
+          </div>
+
+          {error && (
+            <Card className="mt-6 border-rose-500/30 bg-rose-500/10 p-4 text-rose-300">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-full bg-rose-500/20 p-1.5">
+                  <ShieldCheck size={14} />
+                </div>
+                <p className="text-sm font-medium leading-6">{error}</p>
+              </div>
+            </Card>
+          )}
+
+          {step === 'email' ? (
+            <form onSubmit={handleSendOtp} className="mt-8 space-y-5">
+              {type === 'signin' && (
+                <Input
+                  label="Full name"
+                  type="text"
+                  placeholder="Full Name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="border-slate-700 bg-slate-950/70 px-4 py-3.5 text-sm text-white transition focus:border-indigo-500"
+                  required
+                />
+              )}
+
+              <Input
+                label="University email"
+                type="email"
+                placeholder="University Email (@eng.pdn.ac.lk)"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="border-slate-700 bg-slate-950/70 px-4 py-3.5 text-sm text-white transition focus:border-indigo-500"
+                required
               />
-            )}
-            
-            <input 
-              type="email" 
-              placeholder="University Email (@eng.pdn.ac.lk)" 
-              value={formData.email}
-              onChange={e => setFormData({...formData, email: e.target.value})}
-              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" 
-              required 
-            />
 
-            <button disabled={loading} type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl transition shadow-lg">
-              {loading ? 'Sending OTP...' : 'Send OTP'}
-            </button>
-          </form>
+              <Button disabled={loading} type="submit" className="w-full justify-center py-4 text-base shadow-lg shadow-indigo-900/20">
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Sending OTP...
+                  </>
+                ) : (
+                  <>
+                    <Mail size={18} />
+                    Send OTP
+                  </>
+                )}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="mt-8 space-y-5 animate-in slide-in-from-right-4">
+              <Card className="border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-full bg-emerald-500/20 p-1.5">
+                    <LockKeyhole size={14} />
+                  </div>
+                  <p className="leading-6">Enter the verification code we just sent to your inbox.</p>
+                </div>
+              </Card>
 
-        ) : (
-          
-        /* Step 2: OTP Form */
-          <form onSubmit={handleVerifyOtp} className="space-y-6 animate-in slide-in-from-right-4">
-            <input 
-              type="text" 
-              placeholder="6-Digit Code" 
-              value={otp}
-              onChange={e => setOtp(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition text-center text-2xl tracking-widest font-mono" 
-              maxLength={6}
-              required 
-            />
+              <Input
+                label="Verification code"
+                type="text"
+                placeholder="6-Digit Code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="border-slate-700 bg-slate-950/70 px-4 py-3.5 text-center text-2xl font-mono tracking-[0.35em] text-white transition focus:border-emerald-500"
+                maxLength={6}
+                required
+              />
 
-            <button disabled={loading} type="submit" className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl transition shadow-lg">
-              {loading ? 'Verifying...' : 'Verify & Enter'}
-            </button>
-          </form>
-        )}
-      </div>
+              <Button disabled={loading} type="submit" className="w-full justify-center py-4 text-base shadow-lg shadow-emerald-900/20">
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={18} />
+                    Verify & Enter
+                  </>
+                )}
+              </Button>
+            </form>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
