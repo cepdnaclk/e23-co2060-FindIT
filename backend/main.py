@@ -8,9 +8,9 @@ from auth import router as auth_router
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 from database import SessionLocal
-import models
 from email_service import send_retention_warning_email
 import os
+import models
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -27,6 +27,7 @@ def run_daily_cleanup():
         two_days_from_now = now + timedelta(days=2)
         warning_items = db.query(models.Item).filter(
             models.Item.expires_at <= two_days_from_now,
+            models.Item.expires_at > now,
             models.Item.warning_sent == False
         ).all()
 
@@ -36,10 +37,10 @@ def run_daily_cleanup():
             item.warning_sent = True
         db.commit()
 
-        # 2. DELETE EXPIRED ITEMS (Day 7+)
-        # Find items where the expiration date has passed
-        one_day_ago = now - timedelta(days=1)
-        expired_items = db.query(models.Item).filter(models.Item.expires_at < one_day_ago).all()
+        # 2. DELETE EXPIRED ITEMS (Day 7)
+        # Find items where the expiration date has passed (expires_at is older than right now)
+        expired_items = db.query(models.Item).filter(models.Item.expires_at <= now).all()
+        
         for item in expired_items:
             # Delete associated notifications first to prevent foreign key errors
             db.query(models.Notification).filter(models.Notification.matched_item_id == item.id).delete()
