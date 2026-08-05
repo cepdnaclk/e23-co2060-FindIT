@@ -82,6 +82,7 @@ def home():
     }
 
 # --- START THE SCHEDULER (Only ONCE!) ---
+# --- START THE SCHEDULER (Only ONCE!) ---
 scheduler = BackgroundScheduler()
 
 # Force it to run instantly on boot, then start the 24-hour timer!
@@ -89,5 +90,6 @@ scheduler.add_job(
     run_daily_cleanup, 
     'interval', 
     hours=24,
+    next_run_time=datetime.utcnow()  # <--- THIS IS THE MISSING PIECE
 ) 
 scheduler.start()
