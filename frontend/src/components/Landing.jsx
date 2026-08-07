@@ -26,7 +26,7 @@ export default function Landing({ setView }) {
             variant="secondary"
             size="lg"
             onClick={() => setView('login')}
-            className="min-w-[180px]"
+            className="min-w-[190px] px-6 py-3.5 text-base shadow-[0_10px_30px_rgba(99,102,241,0.18)] sm:min-w-[200px]"
           >
             <ShieldCheck size={18} />
             Login
