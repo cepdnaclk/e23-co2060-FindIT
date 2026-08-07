@@ -123,7 +123,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
               Secure access
             </Badge>
             <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-              {step === 'email' ? (type === 'signin' ? 'Create Account' : 'Welcome Back') : 'Verify Identity'}
+              {step === 'email' ? (type === 'signin' ? 'Create Account' : 'Welcome') : 'Verify Identity'}
             </h2>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-400 sm:text-base">
               {step === 'email'
