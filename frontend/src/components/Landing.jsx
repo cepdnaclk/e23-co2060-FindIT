@@ -21,16 +21,7 @@ export default function Landing({ setView }) {
           </p>
         </div>
 
-        <div className="mb-10 flex flex-col gap-3 sm:flex-row">
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => setView('signin')}
-            className="min-w-[220px]"
-          >
-            <Search size={18} />
-            Continue to report or recover
-          </Button>
+        <div className="mb-10 flex justify-center">
           <Button
             variant="secondary"
             size="lg"
@@ -38,7 +29,7 @@ export default function Landing({ setView }) {
             className="min-w-[180px]"
           >
             <ShieldCheck size={18} />
-            Sign in
+            Login
           </Button>
         </div>
 

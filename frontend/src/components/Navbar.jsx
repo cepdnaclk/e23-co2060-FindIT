@@ -94,15 +94,7 @@ export default function Navbar({ view, setView, handleLogout, notifications, onN
           )}
 
           {view === 'landing' ? (
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Button
-                onClick={() => setView('signin')}
-                variant="secondary"
-                size="sm"
-                className="border-slate-700/80 bg-slate-800/80 text-slate-100 hover:bg-slate-700"
-              >
-                Sign Up
-              </Button>
+            <div className="flex items-center justify-center">
               <Button onClick={() => setView('login')} variant="primary" size="sm">
                 Log In
               </Button>
