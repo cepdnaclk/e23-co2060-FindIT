@@ -130,12 +130,10 @@ export default function ReportForm({
                     </div>
                     <span className="block text-2xl font-black text-white">SNAP A PHOTO</span>
                     <p className="mt-2 max-w-md text-sm text-slate-400">Let our AI fill the report for you instantly</p>
-                    <div className="mt-6">
-                      <Button type="button" variant="secondary" size="md" className="pointer-events-none">
-                        Choose image
-                      </Button>
-                    </div>
-                    <input type="file" accept="image/*" onChange={handleAutoAIUpload} className="hidden" />
+                    <span className="mt-6 inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-100">
+                      Choose image
+                    </span>
+                    <input type="file" accept="image/*" capture="environment" onChange={handleAutoAIUpload} className="hidden" />
                   </label>
                 )}
               </Card>
@@ -187,12 +185,10 @@ export default function ReportForm({
                         <Camera size={40} className="mb-3" />
                         <span className="text-base font-semibold text-slate-200">Add Photo Manually</span>
                         <p className="mt-2 text-sm text-slate-500">Upload an image to attach with your report</p>
-                        <div className="mt-5">
-                          <Button type="button" variant="secondary" size="md" className="pointer-events-none">
-                            Browse files
-                          </Button>
-                        </div>
-                        <input type="file" accept="image/*" onChange={(e) => {
+                        <span className="mt-5 inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-100">
+                          Browse files
+                        </span>
+                        <input type="file" accept="image/*" capture="environment" onChange={(e) => {
                            // For manual mode, use the standard handler
                            handleImageChange(e); 
                         }} className="hidden" />
