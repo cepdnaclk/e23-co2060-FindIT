@@ -116,7 +116,7 @@ export default function ReportForm({
           <div className="space-y-6">
             {/* --- AI SCANNER ZONE (Only for Found Items)[cite: 1] --- */}
             {reportType === 'found' && !selectedImage && (
-              <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900 p-6 sm:p-8">
+              <div className="rounded-[2rem] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900 p-6 sm:p-8">
                 {isScanning ? (
                   <div className="flex flex-col items-center justify-center py-6 text-center text-emerald-400">
                     <Loader2 className="mb-4 animate-spin" size={48} />
@@ -124,19 +124,21 @@ export default function ReportForm({
                     <p className="mt-2 text-sm text-slate-400">Identifying item and generating security questions</p>
                   </div>
                 ) : (
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-500/40 bg-slate-950/70 px-6 py-10 text-center transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-500/10">
+                  <div className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-500/40 bg-slate-950/70 px-6 py-10 text-center transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-500/10">
                     <div className="mb-4 rounded-full bg-emerald-500/10 p-6">
                       <Camera size={44} className="text-emerald-500" />
                     </div>
                     <span className="block text-2xl font-black text-white">SNAP A PHOTO</span>
                     <p className="mt-2 max-w-md text-sm text-slate-400">Let our AI fill the report for you instantly</p>
-                    <span className="mt-6 inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-100">
-                      Choose image
-                    </span>
-                    <input type="file" accept="image/*" capture="environment" onChange={handleAutoAIUpload} className="hidden" />
+                    <div className="mt-6">
+                      <Button type="button" variant="secondary" size="md" className="pointer-events-none">
+                        Choose image
+                      </Button>
+                    </div>
+                    <input type="file" accept="image/*" onChange={handleAutoAIUpload} className="hidden" />
                   </label>
                 )}
-              </Card>
+              </div>
             )}
 
             {scanError && (
@@ -185,10 +187,12 @@ export default function ReportForm({
                         <Camera size={40} className="mb-3" />
                         <span className="text-base font-semibold text-slate-200">Add Photo Manually</span>
                         <p className="mt-2 text-sm text-slate-500">Upload an image to attach with your report</p>
-                        <span className="mt-5 inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-100">
-                          Browse files
-                        </span>
-                        <input type="file" accept="image/*" capture="environment" onChange={(e) => {
+                        <div className="mt-5">
+                          <Button type="button" variant="secondary" size="md" className="pointer-events-none">
+                            Browse files
+                          </Button>
+                        </div>
+                        <input type="file" accept="image/*" onChange={(e) => {
                            // For manual mode, use the standard handler
                            handleImageChange(e); 
                         }} className="hidden" />
