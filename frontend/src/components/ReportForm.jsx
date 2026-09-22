@@ -36,6 +36,7 @@ export default function ReportForm({
       }));
     }
   }, []); // The empty array [] means this runs exactly once when the form opens
+  
   // Helper to handle the automatic AI scan for FOUND items
   const handleAutoAIUpload = async (e) => {
     const file = e.target.files[0];
@@ -50,7 +51,7 @@ export default function ReportForm({
     setScanError(null);
 
     try {
-      // 2. Upload to Cloudinary[cite: 2]
+      // 2. Upload to Cloudinary
       const uploadedUrl = await compressAndUploadImage(file);
       
       // 3. Call Backend for Gemini Analysis
@@ -114,7 +115,7 @@ export default function ReportForm({
 
         <div className="p-6 sm:p-8 lg:p-10">
           <div className="space-y-6">
-            {/* --- AI SCANNER ZONE (Only for Found Items)[cite: 1] --- */}
+            {/* --- AI SCANNER ZONE (Only for Found Items) --- */}
             {reportType === 'found' && !selectedImage && (
               <div className="rounded-[2rem] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900 p-6 sm:p-8">
                 {isScanning ? (
@@ -124,7 +125,7 @@ export default function ReportForm({
                     <p className="mt-2 text-sm text-slate-400">Identifying item and generating security questions</p>
                   </div>
                 ) : (
-                  <div className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-500/40 bg-slate-950/70 px-6 py-10 text-center transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-500/10">
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-500/40 bg-slate-950/70 px-6 py-10 text-center transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-500/10">
                     <div className="mb-4 rounded-full bg-emerald-500/10 p-6">
                       <Camera size={44} className="text-emerald-500" />
                     </div>
@@ -152,7 +153,7 @@ export default function ReportForm({
 
             {/* --- MANUAL FORM (Visible after image select or for Lost reports) --- */}
             <form onSubmit={handleSubmit} className={`space-y-6 ${(reportType === 'found' && !selectedImage && !isScanning) ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-              {/* Progress label for Found items[cite: 1] */}
+              {/* Progress label for Found items */}
               {reportType === 'found' && selectedImage && (
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-grow bg-slate-700"></div>
@@ -193,7 +194,6 @@ export default function ReportForm({
                           </Button>
                         </div>
                         <input type="file" accept="image/*" onChange={(e) => {
-                           // For manual mode, use the standard handler
                            handleImageChange(e); 
                         }} className="hidden" />
                       </label>
