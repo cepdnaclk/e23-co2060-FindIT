@@ -350,3 +350,12 @@ def extend_item_retention(item_id: int, db: Session = Depends(database.get_db)):
 
     # Redirect them straight to the frontend dashboard
     return RedirectResponse(url=f"{frontend_url}?message=extended")
+
+@router.get("/search")
+def search_items(query: str = "", db: Session = Depends(database.get_db)):
+    """Simple search query endpoint for search bar and load tests."""
+    items = db.query(models.Item).filter(
+        (models.Item.title.ilike(f"%{query}%")) | 
+        (models.Item.description.ilike(f"%{query}%"))
+    ).limit(20).all()
+    return items
