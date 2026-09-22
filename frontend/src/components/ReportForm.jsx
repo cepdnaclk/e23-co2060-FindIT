@@ -116,7 +116,7 @@ export default function ReportForm({
           <div className="space-y-6">
             {/* --- AI SCANNER ZONE (Only for Found Items)[cite: 1] --- */}
             {reportType === 'found' && !selectedImage && (
-              <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900 p-6 sm:p-8">
+              <div className="rounded-[2rem] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900 p-6 sm:p-8">
                 {isScanning ? (
                   <div className="flex flex-col items-center justify-center py-6 text-center text-emerald-400">
                     <Loader2 className="mb-4 animate-spin" size={48} />
@@ -124,7 +124,7 @@ export default function ReportForm({
                     <p className="mt-2 text-sm text-slate-400">Identifying item and generating security questions</p>
                   </div>
                 ) : (
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-500/40 bg-slate-950/70 px-6 py-10 text-center transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-500/10">
+                  <div className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-500/40 bg-slate-950/70 px-6 py-10 text-center transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-500/10">
                     <div className="mb-4 rounded-full bg-emerald-500/10 p-6">
                       <Camera size={44} className="text-emerald-500" />
                     </div>
@@ -138,7 +138,7 @@ export default function ReportForm({
                     <input type="file" accept="image/*" onChange={handleAutoAIUpload} className="hidden" />
                   </label>
                 )}
-              </Card>
+              </div>
             )}
 
             {scanError && (

@@ -96,26 +96,6 @@ def create_item(
     for match in match_results:
         matched_db_item = db.query(models.Item).filter(models.Item.id == match["id"]).first()
         if matched_db_item:
-            
-            # --- NOTIFY SUBMITTER ---
-            if item.owner_email:
-                # App Notification
-                new_notif = models.Notification(
-                    user_email=item.owner_email, 
-                    message=f"A potential match was found for your {item.title}!",
-                    matched_item_id=matched_db_item.id
-                )
-                db.add(new_notif)
-                
-                # Email Notification (Sent in Background)
-                background_tasks.add_task(
-                    send_match_notification_email,
-                    receiver_email=item.owner_email,
-                    item_name=item.title,
-                    match_link=frontend_url # <-- Just the base URL!
-
-                )
-                
             # --- NOTIFY ORIGINAL ITEM OWNER ---
             if matched_db_item.owner_email:
                 # App Notification
@@ -135,6 +115,30 @@ def create_item(
                 )
             
             db.commit()
+
+    # Aggregate all matches into one notification for the new report owner.
+    # Otherwise one matching record creates a separate bell entry.
+    if match_results and item.owner_email:
+        db.add(models.Notification(
+            user_email=item.owner_email,
+            message=f"A potential match was found for your {item.title}!",
+            matched_item_id=match_results[0]["id"]
+        ))
+        background_tasks.add_task(
+            send_match_notification_email,
+            receiver_email=item.owner_email,
+            item_name=item.title,
+            match_link=frontend_url
+        )
+        db.commit()
+
+    # Add this last so the confirmation appears first in the newest-first bell list.
+    db.add(models.Notification(
+        user_email=new_item.owner_email,
+        message=f"Your {new_item.item_type.lower()} item report was submitted successfully.",
+        matched_item_id=new_item.id
+    ))
+    db.commit()
 
     # 3. Return the saved item and the potential matches
     return {
@@ -260,10 +264,15 @@ def get_notifications(email: str, db: Session = Depends(database.get_db)):
     notifications = db.query(models.Notification).filter(
         models.Notification.user_email == email,
         models.Notification.is_read == False  # Only fetch unread
-    ).all()
+    ).order_by(models.Notification.id.desc()).all()
     
     result = []
+    seen_messages = set()
     for notif in notifications:
+        if notif.message in seen_messages:
+            continue
+        seen_messages.add(notif.message)
+
         if notif.matched_item:
             raw_contact = notif.matched_item.contact_number
             msg = notif.message.lower() if notif.message else ""

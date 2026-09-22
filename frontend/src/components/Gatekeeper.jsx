@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, ShieldCheck, Loader2, Sparkles, Mail, LockKeyhole } from 'lucide-react';
 import { Button, Card, Badge, Input } from './ui';
+import { getApiUrl } from '../config';
 
 export default function Gatekeeper({ type, onBack, onSuccess }) {
   const [formData, setFormData] = useState({ name: '', email: '' });
@@ -25,7 +26,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
         throw new Error('Access restricted: Please use your university email.');
       }
 
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
 
       // DIAGNOSTIC LOG: This will print exactly where the app is sending the request
       const targetUrl = `${apiUrl}/send-otp`;
@@ -67,7 +68,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const targetUrl = `${apiUrl}/verify-otp`;
       console.log('🚀 ATTEMPTING TO VERIFY OTP AT:', targetUrl);
 
@@ -123,7 +124,7 @@ export default function Gatekeeper({ type, onBack, onSuccess }) {
               Secure access
             </Badge>
             <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-              {step === 'email' ? (type === 'signin' ? 'Create Account' : 'Welcome Back') : 'Verify Identity'}
+              {step === 'email' ? (type === 'signin' ? 'Create Account' : 'Welcome') : 'Verify Identity'}
             </h2>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-400 sm:text-base">
               {step === 'email'

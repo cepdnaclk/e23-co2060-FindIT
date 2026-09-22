@@ -110,23 +110,25 @@ export default function App() {
         return;
     }
 
-    const finalImageUrl = imageFile ? await compressAndUploadImage(imageFile) : formData.image_url;
-    const payload = {
-      title: formData.title,
-      description: formData.description,
-      category: formData.category,
-      location: formData.location,
-      item_type: reportType === 'lost' ? 'Lost' : 'Found',
-      date: formData.date,
-      time: formData.time,
-      image_url: finalImageUrl,
-      secret_question: formData.secretQ,
-      secret_answer: formData.secretA,
-      contact_number: formData.phone,
-      owner_email: userEmail 
-    };
-
     try {
+      // Upload the selected file before creating the report so upload errors
+      // are shown to the user instead of becoming an unhandled promise.
+      const finalImageUrl = imageFile ? await compressAndUploadImage(imageFile) : formData.image_url;
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: formData.location,
+        item_type: reportType === 'lost' ? 'Lost' : 'Found',
+        date: formData.date,
+        time: formData.time,
+        image_url: finalImageUrl,
+        secret_question: formData.secretQ,
+        secret_answer: formData.secretA,
+        contact_number: formData.phone,
+        owner_email: userEmail
+      };
+
       const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/items/`, {
         method: "POST",
@@ -135,7 +137,11 @@ export default function App() {
       });
 
       if (response.ok) {
-        alert("Report submitted successfully!");
+        await response.json();
+        const notificationResponse = await fetch(`${apiUrl}/items/notifications/${encodeURIComponent(userEmail)}`);
+        if (notificationResponse.ok) {
+          setNotifications(await notificationResponse.json());
+        }
         setFormData({ category: '', title: '', date: '', time: '', location: '', description: '', secretQ: '', secretA: '', phone: '' });
         setSelectedImage(null);
         setImageFile(null); 
@@ -162,6 +168,13 @@ export default function App() {
   };
 
   const handleNotificationClick = (notif) => {
+    if (notif.message?.toLowerCase().includes('submitted successfully')) {
+      fetch(`${getApiUrl()}/items/notifications/${notif.id}/read`, { method: 'PATCH' })
+        .catch(err => console.error("Failed to mark notification as read:", err));
+      setNotifications(prev => prev.filter(n => n.id !== notif.id));
+      return;
+    }
+
     setSelectedNotification(notif);
     // If it's an admin override, skip the secret question screen
     if (notif.message && notif.message.toLowerCase().includes("admin override")) {
