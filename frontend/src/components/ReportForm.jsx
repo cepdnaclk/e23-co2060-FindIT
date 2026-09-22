@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Camera, X, Lock, Loader2, AlertCircle } from 'lucide-react';
-import { compressAndUploadImage } from '../uploadLogic'; // Ensure path is correct
+import { compressAndUploadImage } from '../uploadLogic'; 
 import { getApiUrl } from '../config';
 import Card from './ui/Card';
 import Button from './ui/Button';
@@ -13,36 +13,31 @@ export default function ReportForm({
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState(null);
 
-  // NEW: Auto-fill Date and Time when the form loads
+  // Auto-fill Date and Time when the form loads
   useEffect(() => {
-    // We only auto-fill if the fields are empty
     if (!formData.date || !formData.time) {
       const now = new Date();
       
-      // Format Date to YYYY-MM-DD (Required by HTML date inputs)
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
       
-      // Format Time to HH:MM (Required by HTML time inputs)
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
 
-      // Update the form state with the current local time
       setFormData(prev => ({
         ...prev,
         date: prev.date || `${year}-${month}-${day}`,
         time: prev.time || `${hours}:${minutes}`
       }));
     }
-  }, []); // The empty array [] means this runs exactly once when the form opens
+  }, []); 
   
   // Helper to handle the automatic AI scan for FOUND items
   const handleAutoAIUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 1. Show preview locally
     const reader = new FileReader();
     reader.onload = (e) => setSelectedImage(e.target.result);
     reader.readAsDataURL(file);
@@ -51,10 +46,8 @@ export default function ReportForm({
     setScanError(null);
 
     try {
-      // 2. Upload to Cloudinary
       const uploadedUrl = await compressAndUploadImage(file);
       
-      // 3. Call Backend for Gemini Analysis
       const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/items/analyze-found-item`, {
         method: "POST",
@@ -64,7 +57,6 @@ export default function ReportForm({
 
       if (response.ok) {
         const aiData = await response.json();
-        // 4. Pre-fill the form with AI results
         setFormData({
           ...formData,
           title: aiData.title || "",
@@ -125,7 +117,7 @@ export default function ReportForm({
                     <p className="mt-2 text-sm text-slate-400">Identifying item and generating security questions</p>
                   </div>
                 ) : (
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-500/40 bg-slate-950/70 px-6 py-10 text-center transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-500/10">
+                  <label htmlFor="ai-upload" className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-500/40 bg-slate-950/70 px-6 py-10 text-center transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-500/10">
                     <div className="mb-4 rounded-full bg-emerald-500/10 p-6">
                       <Camera size={44} className="text-emerald-500" />
                     </div>
@@ -136,7 +128,7 @@ export default function ReportForm({
                         Choose image
                       </Button>
                     </div>
-                    <input type="file" accept="image/*" onChange={handleAutoAIUpload} className="hidden" />
+                    <input id="ai-upload" type="file" accept="image/*" onChange={handleAutoAIUpload} className="sr-only" />
                   </label>
                 )}
               </div>
@@ -153,6 +145,7 @@ export default function ReportForm({
 
             {/* --- MANUAL FORM (Visible after image select or for Lost reports) --- */}
             <form onSubmit={handleSubmit} className={`space-y-6 ${(reportType === 'found' && !selectedImage && !isScanning) ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+              
               {/* Progress label for Found items */}
               {reportType === 'found' && selectedImage && (
                 <div className="flex items-center gap-3">
@@ -166,7 +159,10 @@ export default function ReportForm({
                 <div className="border-b border-slate-800 px-5 py-4 sm:px-6">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-500">Image Upload / AI Scan</p>
+                      {/* CONDITIONAL TEXT: Only mentions AI if it's a Found report */}
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-500">
+                        {reportType === 'found' ? 'Image Upload / AI Scan' : 'Image Upload'}
+                      </p>
                       <h3 className="mt-1 text-lg font-semibold text-white">Item Image</h3>
                     </div>
                     <Badge variant={reportType === 'found' ? 'found' : 'pending'}>
@@ -184,7 +180,7 @@ export default function ReportForm({
                         </Button>
                       </>
                     ) : (
-                      <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center px-6 py-10 text-center text-slate-400 transition-colors hover:text-indigo-400">
+                      <label htmlFor="manual-upload" className="flex h-full w-full cursor-pointer flex-col items-center justify-center px-6 py-10 text-center text-slate-400 transition-colors hover:text-indigo-400">
                         <Camera size={40} className="mb-3" />
                         <span className="text-base font-semibold text-slate-200">Add Photo Manually</span>
                         <p className="mt-2 text-sm text-slate-500">Upload an image to attach with your report</p>
@@ -193,9 +189,9 @@ export default function ReportForm({
                             Browse files
                           </Button>
                         </div>
-                        <input type="file" accept="image/*" onChange={(e) => {
+                        <input id="manual-upload" type="file" accept="image/*" onChange={(e) => {
                            handleImageChange(e); 
-                        }} className="hidden" />
+                        }} className="sr-only" />
                       </label>
                     )}
                   </div>
