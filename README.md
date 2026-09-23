@@ -49,7 +49,6 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 
 ```
-
 ### Frontend Setup
 
 ```bash
@@ -60,6 +59,12 @@ npm run dev
 ```
 
 ---
+## Documentation
+1. Developer Guide: https://drive.google.com/file/d/1k4AoNoJ3cx6vPxfu0YtEiEbm-koY0zNs/view?usp=sharing
+2. User Guide: https://drive.google.com/file/d/1c2zCvNAD7BBYH2xZu5uWzGFI2reYTRCZ/view?usp=sharing
+3. Testing Documentation: https://drive.google.com/file/d/1fHVS5DlC8hUxIWCMVfhsJr1hvc4AOtAD/view?usp=sharing
+4. Customer Feedback: https://drive.google.com/file/d/1l8_SnYAkzy9S7BR0ThANniiL3m_Sk7PO/view?usp=sharing
+
 
 ## The Team (Team NexuX)
 
