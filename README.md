@@ -1,8 +1,4 @@
-Ah, I understand now! You just want the clean, complete **README.md** file for your GitHub repository.
 
-Here is the exact Markdown code. You can copy this entire block and paste it directly into your `README.md` file on GitHub:
-
-```markdown
 # FindIT: A Smart Lost and Found Management System
 
 Losing something valuable—like your keys, a wallet, or a laptop—is incredibly stressful, especially in a fast-paced campus environment. Currently, most lost and found processes are fragmented, relying on pure luck, scattered social media posts, or physical notice boards with limited reach.
@@ -82,6 +78,3 @@ npm run dev
 * `/backend`: FastAPI source code, automated scheduled tasks, database models, and unit tests.
 * `/frontend`: React/Vite source code, UI components, and asset management.
 
-```
-
-```
