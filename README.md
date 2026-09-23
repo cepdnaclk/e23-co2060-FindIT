@@ -1,32 +1,71 @@
+Ah, I understand now! You just want the clean, complete **README.md** file for your GitHub repository.
+
+Here is the exact Markdown code. You can copy this entire block and paste it directly into your `README.md` file on GitHub:
+
+```markdown
 # FindIT: A Smart Lost and Found Management System
 
-Losing something valuable like your keys, a wallet, or a laptop—is incredibly stressful, especially in a fast-paced campus environment. Currently, most lost and found processes are fragmented, relying on pure luck, scattered social media posts, or physical notice boards with limited reach.
+Losing something valuable—like your keys, a wallet, or a laptop—is incredibly stressful, especially in a fast-paced campus environment. Currently, most lost and found processes are fragmented, relying on pure luck, scattered social media posts, or physical notice boards with limited reach.
 
-**FindIT** is designed to bridge this gap. We have built a smart, privacy-first platform that centralizes the recovery process. Instead of waiting for a chance encounter, FindIT uses structured data and intelligent matching to reunite people with their belongings quickly and securely.
+**FindIT** is designed to bridge this gap. We have built a smart, privacy-first platform that centralizes the recovery process. Instead of waiting for a chance encounter, FindIT uses structured data, AI-driven image processing, and intelligent matching to reunite people with their belongings quickly and securely.
 
 ---
 
 ## Key Features
 
-* **Smart Matching:** Utilizes decision-support logic to automatically compare lost and found reports, flagging potential matches for review.
-* **Privacy Controls:** Found item details are kept under restricted visibility to ensure that only the rightful owner can identify and claim them.
-* **Gradual Disclosure:** Provides secure communication channels that protect personal contact information until a match is verified by both parties.
-* **Centralized Dashboard:** A single source of truth for campus security and administrators to monitor recovery trends and manage high-value items.
-* **Automated Lifecycle Management:** Features a built-in background scheduler that tracks item lifespans, issuing warnings and automatically purging expired or resolved reports after a 7-day retention cycle to maintain database efficiency.
+* **AI-Powered Image Analysis:** Integrates the Google Gemini 2.5 Flash Vision API to automatically scan uploaded photos of "Found" items, instantly generating accurate descriptions, categorization tags, and security questions without manual data entry.
+* **Advanced Fuzzy Matching:** Utilizes Levenshtein distance algorithms (`thefuzz`) to cross-reference lost and found reports. The system is typo-resilient, case-insensitive, and strictly enforces category isolation to surface the highest-confidence matches.
+* **Privacy & Gradual Disclosure:** Found item details are kept under restricted visibility. The system provides secure verification mechanisms (like AI-generated secret questions) that protect personal contact information until a match is confirmed by both parties.
+* **Automated Lifecycle Management:** Features a built-in background scheduler that tracks item lifespans, issuing email warnings and automatically purging expired reports after a 7-day retention cycle to maintain database efficiency.
+* **Role-Based Access & Security:** Secured with JWT (JSON Web Tokens) and bcrypt password hashing. Standard users are restricted to modifying only their own posts, while backend controls ensure platform integrity.
+* **Responsive & Scalable Architecture:** A mobile-first React frontend ensures seamless use across all devices, backed by a FastAPI infrastructure load-tested to handle peak campus traffic with zero dropped requests.
 
 ---
 
-## Process
+## How It Works
 
-1. **Report:** Users submit a detailed, structured questionnaire for a lost or found item.
-2. **Match:** The system analyzes descriptions (color, brand, location, time) to find similarities.
-3. **Verify:** The "Gradual Disclosure" process allows the finder to ask clarifying questions without revealing their identity.
-4. **Recover:** Once verified, the system facilitates a safe exchange of contact info or a drop-off location.
-5. **Resolve & Cleanup:** Recovered items are marked as resolved, and unclaimed reports are automatically archived and removed from active search after the 7-day retention period.
+1. **Report:** Users submit a report. For "Found" items, users simply snap a photo, and the AI auto-fills the categorization and descriptive marks.
+2. **Search & Match:** The system continuously analyzes descriptions (color, brand, location, time) and alerts users to potential similarities despite minor typos.
+3. **Verify:** The "Gradual Disclosure" process allows the finder to verify the owner using secret questions without revealing their identity prematurely.
+4. **Recover:** Once verified, the system safely exchanges contact info or drop-off instructions.
+5. **Resolve & Cleanup:** Recovered items are marked as claimed, and stale reports are automatically archived after the 7-day threshold.
 
 ---
 
-## The Team
+## Tech Stack
+
+* **Frontend:** React, Vite, Tailwind CSS, Lucide Icons
+* **Backend:** FastAPI, Python, SQLAlchemy
+* **Database:** MySQL
+* **AI & Algorithms:** Google Gemini SDK, `thefuzz` (Fuzzy String Matching)
+* **Testing & QA:** Python `unittest`/`pytest`, Locust (Load Testing), ESLint
+
+---
+
+## Getting Started (Local Development)
+
+### Backend Setup
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+
+```
+
+---
+
+## The Team (Team NexuX)
 
 | Name | E-Number |
 | --- | --- |
@@ -39,6 +78,10 @@ Losing something valuable like your keys, a wallet, or a laptop—is incredibly 
 
 ## Project Structure
 
-* `/docs`: Contains the SRS report and project documentation.
-* `/src`: Source code for the FindIT platform.
-* `/data`: JSON configurations for the project portal.
+* `/docs`: Contains the System Requirements Specification (SRS), Testing protocols, and project documentation.
+* `/backend`: FastAPI source code, automated scheduled tasks, database models, and unit tests.
+* `/frontend`: React/Vite source code, UI components, and asset management.
+
+```
+
+```
