@@ -9,7 +9,7 @@ title: FindIT - A Smart Lost and Found Management System
 
 # FindIT: A Smart Lost and Found Management System
 
-Losing something valuable like your keys, a wallet, or a laptop—is incredibly stressful, especially in a fast-paced campus environment. Currently, most lost and found processes are fragmented, relying on pure luck, scattered social media posts, or physical notice boards with limited reach.
+Losing something valuable like your keys, a wallet, or a laptop is incredibly stressful, especially in a fast-paced campus environment. Currently, most lost and found processes are fragmented, relying on pure luck, scattered social media posts, or physical notice boards with limited reach.
 
 **FindIT** is designed to bridge this gap. We have built a smart, privacy-first platform that centralizes the recovery process. Instead of waiting for a chance encounter, FindIT uses structured data, AI-driven image processing, and intelligent matching to reunite people with their belongings quickly and securely.
 
